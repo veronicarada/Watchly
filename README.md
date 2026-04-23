@@ -87,7 +87,7 @@ La app abre en `http://localhost:5173`
 
 ---
 
-## 🔑 Google OAuth (opcional)
+## 🔑 Google OAuth 
 
 1. Ir a [console.cloud.google.com](https://console.cloud.google.com)
 2. Crear proyecto → APIs & Services → Credentials
