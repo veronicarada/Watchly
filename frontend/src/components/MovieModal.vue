@@ -50,10 +50,11 @@
                   {{ isFav ? 'GUARDADA' : 'GUARDAR' }}
                 </button>
                 
-                 <a :href="` https://www.google.com/search?q=${encodeURIComponent(movie.title)}+cines+Buenos+Aires`"
-                    target="_blank" class="btn-secondary"></a>
-                    Ver en cines
-                < /a>
+                <a :href='"https://www.google.com/search?q=${encodeURIComponent(movie.title)}+cines+Buenos+Aires"'
+                 target="_blank"
+          class="btn-secondary">
+        Ver en cines
+         </a>
                
               </div>
             </div>
