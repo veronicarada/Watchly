@@ -33,7 +33,7 @@
                 <h4>DISPONIBLE EN</h4>
                 <div class="providers-row">
                   <template v-if="movie.providers?.flatrate?.length">
-                    <a v-for="p in movie.providers.flatrate" :key="p.provider_id"
+                    <a v-for="p in uniqueProviders" :key="p.provider_id"
                       class="provider-badge"
                       :style="`background:${providerColor(p.provider_id)}`"
                       :href="providerUrl(p.provider_id)"
@@ -82,12 +82,24 @@ const isFav   = ref(false)
 
 const PLACEHOLDER = 'https://via.placeholder.com/200x300/1a1a2e/FFD700?text=NO'
 const PROVIDERS = {
-  8:   { name: 'Netflix',   color: '#E50914' },
-  119: { name: 'Prime',     color: '#00A8E1' },
-  337: { name: 'Disney+',   color: '#113CCF' },
-  350: { name: 'Apple TV+', color: '#555555' },
-  384: { name: 'HBO Max',   color: '#B535F5' },
-  283: { name: 'Crunchyroll', color: '#F47521' },
+  8:    { name: 'Netflix',      color: '#B20710', url: 'https://www.netflix.com' },
+  9:    { name: 'Prime',        color: '#3C78B4', url: 'https://www.primevideo.com' },
+  119:  { name: 'Prime',        color: '#3C78B4', url: 'https://www.primevideo.com' },
+  337:  { name: 'Disney+',      color: '#075F6E', url: 'https://www.disneyplus.com' },
+  390:  { name: 'Disney+',      color: '#075F6E', url: 'https://www.disneyplus.com' },
+  350:  { name: 'Apple TV+',    color: '#A3AAAE', url: 'https://tv.apple.com/ar' },
+  2:    { name: 'Apple TV+',    color: '#A3AAAE', url: 'https://tv.apple.com/ar' },
+  1899: { name: 'Max',          color: '#3B2147', url: 'https://www.max.com/ar/es' },
+  283:  { name: 'Crunchyroll',  color: '#F47721', url: 'https://www.crunchyroll.com' },
+  339:  { name: 'MovistarTV',   color: '#0055FC', url: 'https://www.movistar.com.ar/movistartv' },
+  531:  { name: 'Paramount+',   color: '#004CC2', url: 'https://www.paramountplus.com/ar' },
+  582:  { name: 'Paramount+',   color: '#004CC2', url: 'https://www.paramountplus.com/ar' },
+  167:  { name: 'Claro video',  color: '#DA0000', url: 'https://www.clarovideo.com' },
+  457: { name: 'VIX', color: '#000000', url: 'https://www.vix.com' },
+  11:  { name: 'MUBI',       color: '#8B0000', url: 'https://mubi.com/ar' },
+  201: { name: 'MUBI', color: '#8B0000', url: 'https://mubi.com/ar' },
+  300: { name: 'Pluto TV',   color: '#F15A22', url: 'https://pluto.tv/es-419' },
+  467: { name: 'DIRECTV GO', color: '#00A8E0', url: 'https://www.directvgo.com/ar' },
 }
 
 const posterUrl = computed(() =>
@@ -97,20 +109,22 @@ const posterUrl = computed(() =>
 )
 const year = computed(() => movie.value?.release_date?.substring(0, 4) || '—')
 
+const uniqueProviders = computed(() => {
+  if (!movie.value?.providers?.flatrate) return []
+  const seen = new Set()
+  return movie.value.providers.flatrate.filter(p => {
+    const name = PROVIDERS[p.provider_id]?.name || p.provider_name
+    if (seen.has(name)) return false
+    seen.add(name)
+    return true
+  })
+})
 function providerColor(id) { return PROVIDERS[id]?.color || '#333' }
 function providerName(id, fallback) {
   return PROVIDERS[id]?.name || fallback?.substring(0, 6) || '?'
 }
 function providerUrl(id) {
-  const urls = {
-    8:   'https://www.netflix.com',
-    119: 'https://www.primevideo.com',
-    337: 'https://www.disneyplus.com',
-    350: 'https://tv.apple.com',
-    384: 'https://www.max.com',
-    283: 'https://www.crunchyroll.com',
-  }
-  return urls[id] || 'https://www.google.com/search?q=' + id
+  return PROVIDERS[id]?.url || 'https://www.google.com/search?q=' + id
 }
 
 watch(() => modal.movieId, async (id) => {
