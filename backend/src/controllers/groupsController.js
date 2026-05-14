@@ -43,43 +43,31 @@ const getGroup = async (req, res) => {
   } catch { res.status(500).json({ error: 'Error al obtener grupo' }); }
 };
 
+// Dentro de voteMovie en groupsController.js
 const voteMovie = async (req, res) => {
   const { movie_id, vote } = req.body;
   try {
     const { data: group } = await supabase.from('groups').select('*').eq('code', req.params.code.toUpperCase()).single();
-    if (!group) return res.status(404).json({ error: 'Sala no encontrada' });
-
+    
     const votes = group.votes || {};
     if (!votes[movie_id]) votes[movie_id] = {};
-    
-    // Registramos el voto del usuario actual
     votes[movie_id][req.user.id] = vote;
 
     let updateData = { votes };
-    let match = false;
-
-    // Lógica de Match o Siguiente Película
-    const members = group.members || [];
-    const currentVotes = Object.values(votes[movie_id]);
     
-    // 1. Si alguien vota 'no' (PASO), la película se descarta para todos
+    // Si alguien vota 'no', limpiamos la película activa para que el sistema pida otra
     if (vote === 'no') {
-      updateData.active_movie_id = null; // Esto obligará al frontend a pedir otra
-    } 
-    // 2. Si todos votan 'yes', hay MATCH
-    else {
-      const yesCount = currentVotes.filter(v => v === 'yes').length;
-      if (yesCount >= members.length) {
-        match = true;
-      }
+      updateData.active_movie_id = null;
     }
 
     await supabase.from('groups').update(updateData).eq('code', req.params.code.toUpperCase());
     
-    res.json({ votes: votes[movie_id], match });
-  } catch (err) { 
-    console.error(err);
-    res.status(500).json({ error: 'Error al votar' }); 
+    // Verificar si todos votaron 'yes' para el MATCH
+    const allVotedYes = group.members.every(m => votes[movie_id][m] === 'yes');
+    
+    res.json({ votes: votes[movie_id], match: allVotedYes });
+  } catch (err) {
+    res.status(500).json({ error: 'Error al votar' });
   }
 };
 

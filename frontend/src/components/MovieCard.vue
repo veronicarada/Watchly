@@ -1,5 +1,5 @@
 <template>
-  <div class="movie-card" @click="modal.openMovie(movie.id)">
+  <div class="movie-card" @click="modal.openMovie(movie.movie_id || movie.id)">
     <div class="movie-poster">
       <img
         :src="posterUrl"
