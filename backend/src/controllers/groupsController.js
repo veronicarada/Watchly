@@ -7,7 +7,15 @@ const generateCode = () => {
 
 const createGroup = async (req, res) => {
   try {
-    const { data, error } = await supabase.from('groups').insert([{ code: generateCode(), created_by: req.user.id, members: [req.user.id], votes: {} }]).select().single();
+    const { data, error } = await supabase.from('groups')
+      .insert([{ 
+        code: generateCode(), 
+        created_by: req.user.id, 
+        members: [req.user.id], 
+        votes: {},
+        active_movie_id: null // Empezamos sin película activa
+      }])
+      .select().single();
     if (error) throw error;
     res.status(201).json(data);
   } catch { res.status(500).json({ error: 'Error al crear grupo' }); }
@@ -29,7 +37,7 @@ const joinGroup = async (req, res) => {
 
 const getGroup = async (req, res) => {
   try {
-    const { data, error } = await supabase.from('groups').select('*').eq('code', req.params.code).single();
+    const { data, error } = await supabase.from('groups').select('*').eq('code', req.params.code.toUpperCase()).single();
     if (error || !data) return res.status(404).json({ error: 'Sala no encontrada' });
     res.json(data);
   } catch { res.status(500).json({ error: 'Error al obtener grupo' }); }
@@ -38,15 +46,52 @@ const getGroup = async (req, res) => {
 const voteMovie = async (req, res) => {
   const { movie_id, vote } = req.body;
   try {
-    const { data: group } = await supabase.from('groups').select('*').eq('code', req.params.code).single();
+    const { data: group } = await supabase.from('groups').select('*').eq('code', req.params.code.toUpperCase()).single();
     if (!group) return res.status(404).json({ error: 'Sala no encontrada' });
+
     const votes = group.votes || {};
     if (!votes[movie_id]) votes[movie_id] = {};
+    
+    // Registramos el voto del usuario actual
     votes[movie_id][req.user.id] = vote;
-    await supabase.from('groups').update({ votes }).eq('code', req.params.code);
-    const allVotedYes = (group.members || []).every(m => votes[movie_id][m] === 'yes');
-    res.json({ votes: votes[movie_id], match: allVotedYes });
-  } catch { res.status(500).json({ error: 'Error al votar' }); }
+
+    let updateData = { votes };
+    let match = false;
+
+    // Lógica de Match o Siguiente Película
+    const members = group.members || [];
+    const currentVotes = Object.values(votes[movie_id]);
+    
+    // 1. Si alguien vota 'no' (PASO), la película se descarta para todos
+    if (vote === 'no') {
+      updateData.active_movie_id = null; // Esto obligará al frontend a pedir otra
+    } 
+    // 2. Si todos votan 'yes', hay MATCH
+    else {
+      const yesCount = currentVotes.filter(v => v === 'yes').length;
+      if (yesCount >= members.length) {
+        match = true;
+      }
+    }
+
+    await supabase.from('groups').update(updateData).eq('code', req.params.code.toUpperCase());
+    
+    res.json({ votes: votes[movie_id], match });
+  } catch (err) { 
+    console.error(err);
+    res.status(500).json({ error: 'Error al votar' }); 
+  }
 };
 
-module.exports = { createGroup, joinGroup, getGroup, voteMovie };
+// Nueva función para sincronizar la película que todos ven
+const setActiveMovie = async (req, res) => {
+  const { movie_id } = req.body;
+  try {
+    await supabase.from('groups')
+      .update({ active_movie_id: movie_id })
+      .eq('code', req.params.code.toUpperCase());
+    res.json({ success: true });
+  } catch { res.status(500).json({ error: 'Error al cambiar película' }); }
+};
+
+module.exports = { createGroup, joinGroup, getGroup, voteMovie, setActiveMovie };
