@@ -13,12 +13,67 @@ const createGroup = async (req, res) => {
         created_by: req.user.id, 
         members: [req.user.id], 
         votes: {},
-        active_movie_id: null // Empezamos sin película activa
+        active_movie_id: null,
+        status: 'proposing', // Nueva sala empieza en fase de propuesta
+        proposals: []        // Array vacío de sugerencias
       }])
       .select().single();
     if (error) throw error;
     res.status(201).json(data);
   } catch { res.status(500).json({ error: 'Error al crear grupo' }); }
+};
+
+// NUEVA FUNCIÓN: Para que un miembro proponga una película
+const proposeMovie = async (req, res) => {
+  const { movie_id, title, poster_path } = req.body;
+  const { code } = req.params;
+
+  try {
+    const { data: group } = await supabase.from('groups').select('*').eq('code', code.toUpperCase()).single();
+    if (!group) return res.status(404).json({ error: 'Sala no encontrada' });
+
+    const proposals = group.proposals || [];
+    
+    // Evitar que el mismo usuario proponga más de una vez
+    if (proposals.find(p => p.user_id === req.user.id)) {
+      return res.status(400).json({ error: 'Ya has enviado tu propuesta' });
+    }
+
+    proposals.push({
+      user_id: req.user.id,
+      movie_id,
+      title,
+      poster_path
+    });
+
+    const { data, error } = await supabase.from('groups')
+      .update({ proposals })
+      .eq('code', code.toUpperCase())
+      .select().single();
+
+    if (error) throw error;
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: 'Error al enviar propuesta' });
+  }
+};
+
+// NUEVA FUNCIÓN: Para cambiar el estado de la sala (ej: de 'proposing' a 'voting')
+const updateStatus = async (req, res) => {
+  const { status } = req.body; // 'proposing', 'voting', o 'finished'
+  const { code } = req.params;
+
+  try {
+    const { data, error } = await supabase.from('groups')
+      .update({ status })
+      .eq('code', code.toUpperCase())
+      .select().single();
+
+    if (error) throw error;
+    res.json(data);
+  } catch {
+    res.status(500).json({ error: 'Error al actualizar estado' });
+  }
 };
 
 const joinGroup = async (req, res) => {
@@ -43,7 +98,6 @@ const getGroup = async (req, res) => {
   } catch { res.status(500).json({ error: 'Error al obtener grupo' }); }
 };
 
-// Dentro de voteMovie en groupsController.js
 const voteMovie = async (req, res) => {
   const { movie_id, vote } = req.body;
   try {
@@ -55,15 +109,17 @@ const voteMovie = async (req, res) => {
 
     let updateData = { votes };
     
-    // Si alguien vota 'no', limpiamos la película activa para que el sistema pida otra
     if (vote === 'no') {
       updateData.active_movie_id = null;
     }
 
-    await supabase.from('groups').update(updateData).eq('code', req.params.code.toUpperCase());
-    
-    // Verificar si todos votaron 'yes' para el MATCH
+    // Si hay MATCH, podemos cambiar el status a 'finished' automáticamente
     const allVotedYes = group.members.every(m => votes[movie_id][m] === 'yes');
+    if (allVotedYes) {
+      updateData.status = 'finished';
+    }
+
+    await supabase.from('groups').update(updateData).eq('code', req.params.code.toUpperCase());
     
     res.json({ votes: votes[movie_id], match: allVotedYes });
   } catch (err) {
@@ -71,7 +127,6 @@ const voteMovie = async (req, res) => {
   }
 };
 
-// Nueva función para sincronizar la película que todos ven
 const setActiveMovie = async (req, res) => {
   const { movie_id } = req.body;
   try {
@@ -82,4 +137,12 @@ const setActiveMovie = async (req, res) => {
   } catch { res.status(500).json({ error: 'Error al cambiar película' }); }
 };
 
-module.exports = { createGroup, joinGroup, getGroup, voteMovie, setActiveMovie };
+module.exports = { 
+  createGroup, 
+  joinGroup, 
+  getGroup, 
+  voteMovie, 
+  setActiveMovie,
+  proposeMovie, // Exportada
+  updateStatus  // Exportada
+};
