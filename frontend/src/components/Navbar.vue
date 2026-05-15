@@ -17,11 +17,26 @@
       <template v-if="!auth.isLoggedIn">
         <button class="btn-login"    @click="openAuth('login')">Ingresar</button>
         <button class="btn-register" @click="openAuth('register')">Registrarse</button>
+
       </template>
       <template v-else>
         <div class="user-info">
           <div class="user-avatar">{{ auth.user?.username?.[0]?.toUpperCase() }}</div>
           <span class="username">{{ auth.user?.username }}</span>
+          <!-- Dropdown de tema -->
+          <div class="theme-menu" :class="{ open: themeOpen }">
+           <button class="theme-trigger" @click.stop="themeOpen = !themeOpen" title="Cambiar tema">
+              <span v-if="theme.mode === 'light'" class="icon-sun">☀</span>
+              <span v-else-if="theme.mode === 'dark'" class="icon-moon">☾</span>
+              <span v-else class="icon-auto"></span>
+           </button>
+           <div class="theme-dropdown" v-if="themeOpen">
+             <button @click="setTheme('light')" :class="{ active: theme.mode === 'light' }"><span class="icon-sun">☀</span> Claro</button>
+             <button @click="setTheme('dark')"  :class="{ active: theme.mode === 'dark' }"><span class="icon-moon">☾</span> Oscuro</button>
+             <button @click="setTheme('auto')"  :class="{ active: theme.mode === 'auto' }"><span class="icon-auto"></span> Automático</button>
+           </div>
+          </div>
+
           <button class="btn-logout" @click="handleLogout">Salir</button>
         </div>
       </template>
@@ -30,23 +45,38 @@
 </template>
 
 <script setup>
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 import { useModalStore } from '@/stores/modal'
+import { useThemeStore } from '@/stores/theme'
 
+const theme = useThemeStore()
 const router   = useRouter()
 const auth     = useAuthStore()
 const toast    = useToastStore()
 const modal    = useModalStore()
+const themeOpen = ref(false) 
 
 function openAuth(tab) { modal.openAuth(tab) }
+function setTheme(mode) {
+  theme.setMode(mode)
+  themeOpen.value = false
+}
 
 function handleLogout() {
   auth.logout()
   toast.show('Sesión cerrada', 'info')
   router.push('/')
 }
+
+function closeOnOutside(e) {
+  if (!e.target.closest('.theme-menu')) themeOpen.value = false
+}
+onMounted(() => document.addEventListener('click', closeOnOutside))
+onUnmounted(() => document.removeEventListener('click', closeOnOutside))
+
 </script>
 
 <style lang="scss" scoped>
@@ -110,6 +140,41 @@ function handleLogout() {
   background: $bg3; color: $text2;
   font-size: 12px; border: 1px solid $border; transition: $transition;
   &:hover { color: $red; border-color: $red; }
+}
+.btn-theme {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: $bg3; border: 1px solid $border;
+  font-size: 16px; display: flex; align-items: center; justify-content: center;
+  transition: $transition;
+  &:hover { border-color: $gold; transform: scale(1.1); }
+}
+
+/* ← esto es lo nuevo */
+.theme-menu {
+  position: relative;
+}
+.theme-trigger {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: $bg3; border: 1px solid $border;
+  font-size: 15px; display: flex; align-items: center; justify-content: center;
+  transition: $transition;
+  &:hover { border-color: $gold; transform: scale(1.1); }
+}
+.theme-dropdown {
+  position: absolute; top: calc(100% + 8px); right: 0;
+  background: $bg2; border: 1px solid $border;
+  border-radius: $radius-sm; overflow: hidden;
+  box-shadow: $shadow; min-width: 150px; z-index: 200;
+
+  button {
+    display: flex; align-items: center; gap: 8px;
+    width: 100%; padding: 9px 16px;
+    font-size: 13px; color: $text2;
+    background: transparent; border: none; cursor: pointer;
+    transition: $transition;
+    &:hover { background: $bg3; color: $text; }
+    &.active { color: $gold; font-weight: 600; }
+  }
 }
 
 @media (max-width: 768px) { .navbar-center { display: none; } }

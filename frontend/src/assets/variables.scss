@@ -1,18 +1,18 @@
 // ─── Watchly SCSS Variables ───────────────────────────────────────────────────
-$bg:       #0D0D0F;
-$bg2:      #131318;
-$bg3:      #1A1A22;
-$bg4:      #22222C;
-$card:     #18181F;
-$border:   rgba(255,255,255,0.07);
+$bg:       var(--bg);
+$bg2:      var(--bg2);
+$bg3:      var(--bg3);
+$bg4:      var(--bg4);
+$card:     var(--card);
+$border:   var(--border);
+$text:     var(--text);
+$text2:    var(--text2);
+$text3:    var(--text3);
 $gold:     #FFD700;
 $gold2:    #F5A623;
 $red:      #E50914;
 $blue:     #00A8E1;
 $green:    #00C896;
-$text:     #F0F0F0;
-$text2:    #A0A0B0;
-$text3:    #606070;
 $radius:   12px;
 $radius-sm: 8px;
 $shadow:   0 8px 32px rgba(0,0,0,0.5);

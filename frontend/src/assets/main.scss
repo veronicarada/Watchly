@@ -1,4 +1,30 @@
 @use './variables' as *;
+
+// ─── Temas ────────────────────────────────────────────────────────────────────
+:root, [data-theme="dark"] {
+  --bg:     #0D0D0F;
+  --bg2:    #131318;
+  --bg3:    #1A1A22;
+  --bg4:    #22222C;
+  --card:   #18181F;
+  --border: rgba(255,255,255,0.07);
+  --text:   #F0F0F0;
+  --text2:  #A0A0B0;
+  --text3:  #606070;
+}
+
+[data-theme="light"] {
+  --bg:     #F5F5F5;
+  --bg2:    #FFFFFF;
+  --bg3:    #E8E8E8;
+  --bg4:    #D0D0D0;
+  --card:   #FFFFFF;
+  --border: rgba(38, 38, 38, 0.262);
+  --text:   #dcd8d8;
+  --text2:  #acabab;
+  --text3:  #888888;
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700;900&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -126,4 +152,27 @@ button { cursor: pointer; border: none; font-family: $font-body; }
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 16px;
+}
+.icon-sun {
+  color: #fafafa;
+  font-size: 13px; line-height: 1;
+  background: #717070;
+  width: 20px; height: 20px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;  // ← esto
+}
+.icon-moon {
+  color: #0e0d0d;
+  font-size: 13px; line-height: 1;
+  background: #9b9b9b;
+  width: 20px; height: 20px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;  // ← esto
+}
+.icon-auto {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  border: 1px solid rgb(127, 126, 126);
+  background: linear-gradient(90deg, #000 50%, #fff 50%);
+  flex-shrink: 0;
 }
