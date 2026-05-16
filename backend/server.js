@@ -33,6 +33,7 @@ app.use('/api/auth',      require('./src/routes/auth'));
 app.use('/api/movies',    require('./src/routes/movies'));
 app.use('/api/favorites', require('./src/routes/favorites'));
 app.use('/api/groups',    require('./src/routes/groups'));
+app.use('/api/chatbot',   require('./src/routes/chatbot'));
 
 // ─── Health check ────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {

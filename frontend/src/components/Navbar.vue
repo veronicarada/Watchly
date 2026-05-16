@@ -84,7 +84,7 @@ onUnmounted(() => document.removeEventListener('click', closeOnOutside))
 
 .navbar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  background: rgba(13,13,15,0.92);
+  background: var(--bg2);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid $border;
   height: 60px;

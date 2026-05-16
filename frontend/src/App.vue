@@ -8,6 +8,7 @@
     <MovieModal />
     <AuthModal />
     <ToastContainer />
+    <ChatBot />
   </div>
 </template>
 
@@ -17,6 +18,7 @@ import MobileNav      from '@/components/MobileNav.vue'
 import MovieModal     from '@/components/MovieModal.vue'
 import AuthModal      from '@/components/AuthModal.vue'
 import ToastContainer from '@/components/ToastContainer.vue'
+import ChatBot        from '@/views/Chatbot.vue'
 </script>
 
 <style lang="scss">
