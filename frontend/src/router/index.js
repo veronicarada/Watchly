@@ -5,6 +5,7 @@ import Explore   from '@/views/Explore.vue'
 import Random    from '@/views/Random.vue'
 import Favorites from '@/views/Favorites.vue'
 import Group     from '@/views/Group.vue'
+import ResetPassword from '@/views/ResetPasswordView.vue'
 
 const routes = [
   { path: '/',          name: 'Home',      component: Home },
@@ -12,6 +13,7 @@ const routes = [
   { path: '/sorpresa',  name: 'Random',    component: Random },
   { path: '/favoritas', name: 'Favorites', component: Favorites },
   { path: '/grupo',     name: 'Group',     component: Group },
+  { path: '/reset-password', name: 'ResetPassword', component: ResetPassword },
 ]
 
 const router = createRouter({
