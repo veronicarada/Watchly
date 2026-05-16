@@ -45,6 +45,6 @@ export const api = {
 
   //Noche de cine
   proposeMovie: (code, movie_id, title, poster_path) => request(`/groups/${code}/propose`, 'POST', { movie_id, title, poster_path }, true),
-  updateStatus: (code, status) => request(`/groups/${code}/status`, 'PATCH', { status }, true),
+  updateStatus: (code, status) => request(`/groups/${code}/status`, 'POST', { status }, true),
   resolveTieBreaker: (code) => request(`/groups/${code}/tiebreaker`, 'POST', {}, true),
 }
