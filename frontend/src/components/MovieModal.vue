@@ -39,7 +39,7 @@
                     No disponible en streaming actualmente
                   </span>
                   
-                  <a v-for="prov in allProviders"
+                <a    v-for="prov in allProviders"
                     :key="prov.provider_id + prov.type"
                     class="provider-item"
                     :href="providerUrl(prov.provider_id)"
@@ -59,19 +59,12 @@
                   </a>
                 </div>
               </div>
-
-              <div class="modal-actions">
-                <button class="btn-primary" :class="{ active: isFav }" @click="toggleFav">
-                  {{ isFav ? 'GUARDADA' : 'GUARDAR' }}
-                </button>
-                
-<a :href="'https://www.google.com/search?q=' + encodeURIComponent(movie.title) + '+cines+Buenos+Aires'"
-                  target="_blank"
-                  class="btn-secondary"
-                >
-                  Ver en cines
-                </a>
-              </div>
+  <div class="modal-actions">
+  <button class="btn-primary" :class="{ active: isFav }" @click="toggleFav">
+    {{ isFav ? 'GUARDADA' : 'GUARDAR' }}
+  </button>
+  <a :href="'https://www.google.com/search?q=' + encodeURIComponent(movie.title) + '+cines+Buenos+Aires'" target="_blank" class="btn-secondary">Ver en cines</a>
+</div>
             </div>
           </div>
         </template>
@@ -91,9 +84,9 @@ const modal = useModalStore()
 const auth  = useAuthStore()
 const toast = useToastStore()
 
-const movie   = ref(null)
-const loading = ref(false)
-const isFav   = ref(false)
+const movie       = ref(null)
+const loading     = ref(false)
+const isFav       = ref(false)
 
 const PLACEHOLDER = 'https://via.placeholder.com/200x300/1a1a2e/FFD700?text=NO'
 
@@ -171,6 +164,7 @@ watch(() => modal.movieId, async (id) => {
   }
   loading.value = true
   isFav.value = false
+
   try {
     movie.value = await api.movieDetail(id)
   } catch (err) {
@@ -178,14 +172,17 @@ watch(() => modal.movieId, async (id) => {
     loading.value = false
     return
   }
+
   if (auth.isLoggedIn) {
     try {
       const result = await api.checkFavorite(id)
       isFav.value = result.isFavorite
-    } catch (err) {
+    } catch {
       // token vencido — P1 lo arregla
     }
+   
   }
+
   loading.value = false
 })
 
@@ -286,7 +283,7 @@ async function toggleFav() {
 .no-providers { font-size: 13px; color: $text3; }
 .modal-actions { display: flex; gap: 12px; flex-wrap: wrap; }
 .modal-actions .btn-primary { flex: 1; }
-.modal-actions .btn-secondary { flex: 1; text-align: center; }
+.modal-actions .btn-secondary { flex: 1; }
 
 @media (max-width: 600px) {
   .modal-body { flex-direction: column; }

@@ -36,7 +36,7 @@ export const api = {
   addFavorite: (movie) => request('/favorites', 'POST', movie, true),
   removeFavorite: (movieId) => request(`/favorites/${movieId}`, 'DELETE', null, true),
   checkFavorite: (movieId) => request(`/favorites/check/${movieId}`, 'GET', null, true),
-
+  
   // Groups
   createGroup: () => request('/groups/create', 'POST', {}, true),
   joinGroup: (code) => request('/groups/join', 'POST', { code }, true),
