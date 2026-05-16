@@ -21,6 +21,7 @@ export const api = {
   register: (username, email, password) => request('/auth/register', 'POST', { username, email, password }),
   login: (email, password) => request('/auth/login', 'POST', { email, password }),
   googleLogin: (credential) => request('/auth/google', 'POST', { credential }),
+  updateProfile: (username) => request('/auth/profile', 'PUT', { username }, true),
 
   // Movies
   search: (q, page = 1) => request(`/movies/search?q=${encodeURIComponent(q)}&page=${page}`),

@@ -190,4 +190,25 @@ const resetPassword = async (req, res) => {
     res.status(500).json({ error: 'Error al resetear la contraseña' });
   }
 };
-module.exports = { register, login, googleLogin, forgotPassword, resetPassword };
+// PUT /api/auth/profile
+const updateProfile = async (req, res) => {
+  const { username } = req.body;
+  if (!username) return res.status(400).json({ error: 'Username requerido' });
+
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .update({ username })
+      .eq('id', req.user.id)
+      .select('id, username, email')
+      .single();
+
+    if (error) throw error;
+    res.json({ user: data });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al actualizar perfil' });
+  }
+};
+
+module.exports = { register, login, googleLogin, forgotPassword, resetPassword, updateProfile };
