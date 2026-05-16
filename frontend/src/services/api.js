@@ -47,4 +47,8 @@ export const api = {
   proposeMovie: (code, movie_id, title, poster_path) => request(`/groups/${code}/propose`, 'POST', { movie_id, title, poster_path }, true),
   updateStatus: (code, status) => request(`/groups/${code}/status`, 'POST', { status }, true),
   resolveTieBreaker: (code) => request(`/groups/${code}/tiebreaker`, 'POST', {}, true),
+
+  // Reseñas
+  getReviews: (movieId) => request(`/reviews/${movieId}`, 'GET'),
+  createReview: (reviewData) => request('/reviews', 'POST', reviewData, true),
 }

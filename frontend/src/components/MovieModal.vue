@@ -65,13 +65,71 @@
                   {{ isFav ? 'GUARDADA' : 'GUARDAR' }}
                 </button>
                 
-<a :href="'https://www.google.com/search?q=' + encodeURIComponent(movie.title) + '+cines+Buenos+Aires'"
+                <a :href="'https://www.google.com/search?q=' + encodeURIComponent(movie.title) + '+cines+Buenos+Aires'"
                   target="_blank"
                   class="btn-secondary"
                 >
                   Ver en cines
                 </a>
               </div>
+
+              <div class="modal-reviews-section">
+                <h4>RESEÑAS DE LA COMUNIDAD</h4>
+
+                <div v-if="auth.isLoggedIn" class="review-form-container">
+                  <h5>Dejá tu opinión</h5>
+                  <form @submit.prevent="handleSendReview">
+                    <div class="review-form-row">
+                      <div class="review-form-group">
+                        <label for="review-rating">Calificación:</label>
+                        <select id="review-rating" v-model.number="rating" class="review-select">
+                          <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
+                          <option value="4">⭐⭐⭐⭐ (4/5)</option>
+                          <option value="3">⭐⭐⭐ (3/5)</option>
+                          <option value="2">⭐⭐ (2/5)</option>
+                          <option value="1">⭐ (1/5)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="review-form-group">
+                      <textarea 
+                        v-model="comment" 
+                        placeholder="¿Qué te pareció la película? Escribí tu comentario acá..."
+                        rows="3"
+                        required
+                        class="review-textarea"
+                      ></textarea>
+                    </div>
+
+                    <button type="submit" :disabled="isSubmitting" class="btn-primary" style="padding: 10px 20px; font-size: 14px;">
+                      {{ isSubmitting ? 'PUBLICANDO...' : 'PUBLICAR RESEÑA' }}
+                    </button>
+                  </form>
+                </div>
+
+                <div v-else class="review-login-prompt">
+                  <p>Debés iniciar sesión para dejar una opinión sobre la película.</p>
+                </div>
+
+                <div class="reviews-display-list">
+                  <div v-if="reviews.length === 0" class="review-empty-state">
+                    <p>Aún no hay opiniones de esta película. ¡Sé el primero en dejar una!</p>
+                  </div>
+                  
+                  <div v-else v-for="review in reviews" :key="review.id" class="review-item-card">
+                    <div class="review-item-header">
+                      <span class="review-item-user">{{ review.user_email }}</span>
+                      <span class="review-item-stars">{{ '⭐'.repeat(review.rating) }}</span>
+                    </div>
+                    <p class="review-item-comment">{{ review.comment }}</p>
+                    <span class="review-item-date">
+                      {{ new Date(review.created_at).toLocaleDateString() }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
         </template>
@@ -83,7 +141,7 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
 import { useModalStore } from '@/stores/modal'
-import { useAuthStore }  from '@/stores/auth'
+import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 import { api } from '@/services/api'
 
@@ -94,6 +152,12 @@ const toast = useToastStore()
 const movie   = ref(null)
 const loading = ref(false)
 const isFav   = ref(false)
+
+// Estados para el apartado de reseñas
+const reviews = ref([])
+const rating = ref(5)
+const comment = ref('')
+const isSubmitting = ref(false)
 
 const PLACEHOLDER = 'https://via.placeholder.com/200x300/1a1a2e/FFD700?text=NO'
 
@@ -164,26 +228,63 @@ function shortName(id, fallback) {
   return '?'
 }
 
+// Cargar reseñas asociadas
+async function fetchReviews(movieId) {
+  try {
+    reviews.value = await api.getReviews(movieId)
+  } catch (err) {
+    console.error('Error al traer las opiniones:', err)
+  }
+}
+
+// Publicar reseña
+async function handleSendReview() {
+  if (!comment.value.trim()) return
+  isSubmitting.value = true
+  try {
+    const newReview = await api.createReview({
+      movie_id: movie.value.id,
+      rating: rating.value,
+      comment: comment.value
+    })
+    reviews.value.unshift(newReview)
+    comment.value = ''
+    rating.value = 5
+    toast.show('¡Opinión publicada con éxito!', 'success')
+  } catch (err) {
+    toast.show(err.message, 'error')
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
 watch(() => modal.movieId, async (id) => {
   if (!id) {
     movie.value = null
+    reviews.value = []
     return
   }
   loading.value = true
   isFav.value = false
+  comment.value = ''
+  rating.value = 5
+
   try {
     movie.value = await api.movieDetail(id)
+    // Buscamos las opiniones de la base de datos de manera paralela
+    await fetchReviews(id)
   } catch (err) {
     toast.show('Error al cargar la película', 'error')
     loading.value = false
     return
   }
+
   if (auth.isLoggedIn) {
     try {
       const result = await api.checkFavorite(id)
       isFav.value = result.isFavorite
     } catch (err) {
-      // token vencido — P1 lo arregla
+      // token vencido
     }
   }
   loading.value = false
@@ -284,13 +385,50 @@ async function toggleFav() {
   font-size: 9px; color: $gold; font-weight: 600; text-transform: uppercase;
 }
 .no-providers { font-size: 13px; color: $text3; }
-.modal-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.modal-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
 .modal-actions .btn-primary { flex: 1; }
 .modal-actions .btn-secondary { flex: 1; text-align: center; }
 
+// ESTILOS AGREGADOS: APARTADO DE RESEÑAS
+.modal-reviews-section {
+  margin-top: 24px; padding-top: 20px; border-top: 1px solid $border;
+  h4 { font-size: 11px; letter-spacing: 2px; color: $text3; text-transform: uppercase; margin-bottom: 14px; }
+}
+.review-form-container {
+  background: rgba(255, 255, 255, 0.02); border: 1px solid $border; padding: 16px; border-radius: 10px; margin-bottom: 20px;
+  h5 { margin-top: 0; margin-bottom: 12px; font-size: 14px; font-family: $font-display; letter-spacing: 0.5px; }
+  .review-form-group {
+    margin-bottom: 12px;
+    label { display: block; font-size: 12px; margin-bottom: 6px; color: $text2; }
+  }
+  .review-select, .review-textarea {
+    width: 100%; padding: 10px; border-radius: 6px; background: rgba(0, 0, 0, 0.2); border: 1px solid $border;
+    color: $text; font-family: inherit; font-size: 13px; transition: border-color 0.2s;
+    &:focus { outline: none; border-color: $gold; }
+  }
+}
+.review-login-prompt {
+  background: rgba(255, 255, 255, 0.01); border: 1px solid $border; padding: 12px; border-radius: 8px;
+  text-align: center; margin-bottom: 20px; font-style: italic; color: $text3; font-size: 13px;
+}
+.reviews-display-list {
+  display: flex; flex-direction: column; gap: 10px; max-height: 320px; overflow-y: auto; padding-right: 4px;
+}
+.review-item-card {
+  background: rgba(255, 255, 255, 0.01); border: 1px solid $border; padding: 14px; border-radius: 8px; border-left: 3px solid $red;
+  .review-item-header {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px;
+    .review-item-user { color: $text2; font-weight: 500; }
+  }
+  .review-item-comment { margin: 0 0 6px 0; font-size: 13px; line-height: 1.5; color: $text; word-break: break-word; }
+  .review-item-date { display: block; font-size: 10px; color: $text3; text-align: right; }
+}
+.review-empty-state { text-align: center; color: $text3; font-style: italic; padding: 16px 0; font-size: 13px; }
+
 @media (max-width: 600px) {
-  .modal-body { flex-direction: column; }
+  .modal-body { flex-direction: column; gap: 20px; }
   .modal-poster { width: 120px; margin-top: -60px; }
   .modal-title { font-size: 24px; }
+  .modal-reviews-section { margin-top: 20px; }
 }
 </style>

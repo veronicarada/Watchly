@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const reviewsRoutes = require('./src/routes/reviews');
 const rateLimit = require('express-rate-limit');
 
 const app = express();
@@ -34,7 +35,8 @@ app.use('/api/movies',    require('./src/routes/movies'));
 app.use('/api/favorites', require('./src/routes/favorites'));
 app.use('/api/groups',    require('./src/routes/groups'));
 app.use('/api/chatbot',   require('./src/routes/chatbot'));
-
+app.use('/api/reviews', require('./src/routes/reviews'));
+  
 // ─── Health check ────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: '🎬 Watchly API is running', timestamp: new Date().toISOString() });
