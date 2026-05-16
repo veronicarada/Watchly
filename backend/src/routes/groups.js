@@ -1,10 +1,21 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
-const { createGroup, joinGroup, getGroup, voteMovie } = require('../controllers/groupsController');
+const groupsController = require('../controllers/groupsController');
+
+// Aplicar el middleware de autenticación a todas las rutas de este archivo
 router.use(auth);
-router.post('/create', createGroup);
-router.post('/join', joinGroup);
-router.get('/:code', getGroup);
-router.post('/:code/vote', voteMovie);
+
+// Rutas base del grupo
+router.post('/create', groupsController.createGroup);
+router.post('/join', groupsController.joinGroup);
+router.get('/:code', groupsController.getGroup);
+
+// Rutas de votación y flujo dinámico (Modo Tinder / Noche de cine)
+router.post('/:code/vote', groupsController.voteMovie);
+router.post('/:code/propose', groupsController.proposeMovie);
+router.post('/:code/status', groupsController.updateStatus);
+
+// Ruta para resolver empates de forma aleatoria ("Elegir por mí")
+router.post('/:code/tiebreaker', groupsController.resolveTieBreaker);
 module.exports = router;

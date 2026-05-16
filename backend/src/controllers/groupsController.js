@@ -23,7 +23,7 @@ const createGroup = async (req, res) => {
   } catch { res.status(500).json({ error: 'Error al crear grupo' }); }
 };
 
-// NUEVA FUNCIÓN: Para que un miembro proponga una película
+// Para que un miembro proponga una película
 const proposeMovie = async (req, res) => {
   const { movie_id, title, poster_path } = req.body;
   const { code } = req.params;
@@ -34,9 +34,13 @@ const proposeMovie = async (req, res) => {
 
     const proposals = group.proposals || [];
     
-    // Evitar que el mismo usuario proponga más de una vez
-    if (proposals.find(p => p.user_id === req.user.id)) {
-      return res.status(400).json({ error: 'Ya has enviado tu propuesta' });
+    // CONTROL EN TERMINAL: Vamos a ver qué está leyendo el backend
+    const myProposals = proposals.filter(p => p.user_id === req.user.id);
+    console.log(`[Watchly] El usuario ${req.user.id} ya tiene ${myProposals.length} propuestas en la sala.`);
+
+    // CAMBIO CRÍTICO: Bloquear SOLO si ya llegó a las 3 propuestas
+    if (myProposals.length >= 3) {
+      return res.status(400).json({ error: 'Ya alcanzaste el límite de 3 propuestas' });
     }
 
     proposals.push({
@@ -54,11 +58,12 @@ const proposeMovie = async (req, res) => {
     if (error) throw error;
     res.json(data);
   } catch (err) {
+    console.error("[Watchly Error]", err);
     res.status(500).json({ error: 'Error al enviar propuesta' });
   }
 };
 
-// NUEVA FUNCIÓN: Para cambiar el estado de la sala (ej: de 'proposing' a 'voting')
+// Para cambiar el estado de la sala (ej: de 'proposing' a 'voting' o 'finished')
 const updateStatus = async (req, res) => {
   const { status } = req.body; // 'proposing', 'voting', o 'finished'
   const { code } = req.params;
@@ -113,10 +118,11 @@ const voteMovie = async (req, res) => {
       updateData.active_movie_id = null;
     }
 
-    // Si hay MATCH, podemos cambiar el status a 'finished' automáticamente
+    // Si hay MATCH (todos votaron 'yes'), la app puede pasar a 'finished' automáticamente
     const allVotedYes = group.members.every(m => votes[movie_id][m] === 'yes');
     if (allVotedYes) {
       updateData.status = 'finished';
+      updateData.active_movie_id = movie_id;
     }
 
     await supabase.from('groups').update(updateData).eq('code', req.params.code.toUpperCase());
@@ -137,12 +143,61 @@ const setActiveMovie = async (req, res) => {
   } catch { res.status(500).json({ error: 'Error al cambiar película' }); }
 };
 
+// Para resolver empates de forma aleatoria ("Elegir por mí")
+const resolveTieBreaker = async (req, res) => {
+  const { code } = req.params;
+
+  try {
+    const { data: group } = await supabase.from('groups').select('*').eq('code', code.toUpperCase()).single();
+    if (!group) return res.status(404).json({ error: 'Sala no encontrada' });
+
+    const votes = group.votes || {};
+    const proposals = group.proposals || [];
+    
+    if (proposals.length === 0) {
+      return res.status(400).json({ error: 'No hay películas propuestas para desempatar' });
+    }
+
+    // 1. Contar cuántos votos "yes" tiene cada película propuesta
+    const voteCounts = {};
+    proposals.forEach(p => {
+      const movieVotes = votes[p.movie_id] || {};
+      const yesCount = Object.values(movieVotes).filter(v => v === 'yes').length;
+      voteCounts[p.movie_id] = yesCount;
+    });
+
+    // 2. Encontrar el número máximo de votos acumulados
+    const maxVotes = Math.max(...Object.values(voteCounts));
+
+    // 3. Filtrar cuáles películas alcanzaron ese máximo (las empatadas)
+    const tiedMovieIds = Object.keys(voteCounts).filter(movieId => voteCounts[movieId] === maxVotes);
+
+    // 4. Elegir una al azar de la lista de empatadas
+    const randomMovieId = tiedMovieIds[Math.floor(Math.random() * tiedMovieIds.length)];
+
+    // 5. Modificar la sala con la película ganadora definitiva y finalizar el estado
+    const { data, error } = await supabase.from('groups')
+      .update({ 
+        active_movie_id: parseInt(randomMovieId),
+        status: 'finished'
+      })
+      .eq('code', code.toUpperCase())
+      .select().single();
+
+    if (error) throw error;
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: 'Error al ejecutar el desempate' });
+  }
+};
+
 module.exports = { 
   createGroup, 
   joinGroup, 
   getGroup, 
   voteMovie, 
   setActiveMovie,
-  proposeMovie, // Exportada
-  updateStatus  // Exportada
+  proposeMovie, 
+  updateStatus,
+  resolveTieBreaker
 };

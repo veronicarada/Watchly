@@ -1,5 +1,5 @@
 // src/services/api.js
-const API_URL = 'http://localhost:3001/api'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
 
 async function request(path, method = 'GET', body = null, auth = false) {
   const headers = { 'Content-Type': 'application/json' }
@@ -42,4 +42,9 @@ export const api = {
   joinGroup: (code) => request('/groups/join', 'POST', { code }, true),
   getGroup: (code) => request(`/groups/${code}`, 'GET', null, true),
   voteMovie: (code, movie_id, vote) => request(`/groups/${code}/vote`, 'POST', { movie_id, vote }, true),
+
+  //Noche de cine
+  proposeMovie: (code, movie_id, title, poster_path) => request(`/groups/${code}/propose`, 'POST', { movie_id, title, poster_path }, true),
+  updateStatus: (code, status) => request(`/groups/${code}/status`, 'POST', { status }, true),
+  resolveTieBreaker: (code) => request(`/groups/${code}/tiebreaker`, 'POST', {}, true),
 }
