@@ -42,4 +42,9 @@ export const api = {
   joinGroup: (code) => request('/groups/join', 'POST', { code }, true),
   getGroup: (code) => request(`/groups/${code}`, 'GET', null, true),
   voteMovie: (code, movie_id, vote) => request(`/groups/${code}/vote`, 'POST', { movie_id, vote }, true),
+
+  //Noche de cine
+  proposeMovie: (code, movie_id, title, poster_path) => request(`/groups/${code}/propose`, 'POST', { movie_id, title, poster_path }, true),
+  updateStatus: (code, status) => request(`/groups/${code}/status`, 'PATCH', { status }, true),
+  resolveTieBreaker: (code) => request(`/groups/${code}/tiebreaker`, 'POST', {}, true),
 }
