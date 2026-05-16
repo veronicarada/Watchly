@@ -139,9 +139,9 @@ onUnmounted(() => {
 .user-info { display: flex; align-items: center; gap: 10px; }
 .user-avatar {
   width: 32px; height: 32px; border-radius: 50%;
-  background: linear-gradient(135deg, $gold, $gold2);
+  background: $bg3; border: 1px solid $border;
   display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 700; color: #000;
+  font-size: 20px; font-weight: 700; color: $text;
 }
 .username { font-size: 14px; font-weight: 600; }
 .btn-logout {

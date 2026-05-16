@@ -4,7 +4,7 @@
 
       <!-- Avatar selector -->
       <div class="avatar-section">
-        <div class="avatar-display">{{ selectedAvatar }}</div>
+        <div class="avatar-display">{{ selectedAvatar || auth.user?.username?.[0]?.toUpperCase() }}</div>
         <div class="avatar-grid">
           <button
             v-for="a in avatars"
@@ -57,7 +57,7 @@ import { api } from '@/services/api'
 const auth = useAuthStore()
 const toast = useToastStore()
 
-const avatars = ['🎬', '🎥', '🎞️', '🍿', '🎭', '⭐', '🏆', '🎦', '📽️', '🎟️']
+const avatars = [' ', '🎬', '🎥', '🎞️', '🍿', '🎭', '⭐', '🏆', '🎦', '📽️', '🎟️']
 const selectedAvatar = ref(localStorage.getItem('watchly_avatar') || '🎬')
 const username = ref(auth.user.username)
 const editing = ref(false)
