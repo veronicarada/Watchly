@@ -18,16 +18,17 @@
     </div>
 
     <!-- Promociones / En cartelera -->
-<div class="section-content">
-  <div class="section-header">
-    <h2>EN CARTELERA</h2>
-    <span class="section-badge">🎬 Cines ahora</span>
-  </div>
-  <div v-if="loadingNow" class="loading-dots"><span/><span/><span/></div>
-  <div v-else class="movies-grid">
-    <MovieCard v-for="m in nowPlaying" :key="m.id" :movie="m"/>
-  </div>
-</div>
+    <div class="section-content">
+      <div class="section-header">
+        <h2>EN CARTELERA</h2>
+        <span class="section-badge">🎬 Cines ahora</span>
+      </div>
+      <div v-if="loadingNow" class="loading-dots"><span/><span/><span/></div>
+      <div v-else class="movies-grid">
+        <MovieCard v-for="m in nowPlaying" :key="m.id" :movie="m"/>
+      </div>
+    </div>
+
     <!-- Popular movies -->
     <div class="section-content">
       <div class="section-header"><h2>POPULARES</h2></div>
@@ -65,6 +66,7 @@ async function loadNowPlaying() {
     loadingNow.value = false
   }
 }
+
 const quickGenres = [
   { id: 28,  name: 'Acción' },
   { id: 35,  name: 'Comedia' },
@@ -107,10 +109,13 @@ onMounted(() => {
   background: $bg2; padding: 60px 24px 50px; position: relative; overflow: hidden;
   &::before {
     content: ''; position: absolute; inset: 0;
-    background: radial-gradient(ellipse 80% 80% at 50% -20%, rgba(255,215,0,0.06), transparent);
+    background-image: url('@/assets/ModoOscuro.png');
+    background-size: cover;
+    background-position: center;
+    opacity: 0.4;
   }
 }
-.hero-inner { max-width: 900px; margin: 0 auto; position: relative; }
+.hero-inner { max-width: 900px; margin: 0 auto; position: relative; z-index: 1; }
 .hero-badge {
   display: inline-block; padding: 5px 14px; border: 1px solid $gold;
   border-radius: 4px; font-size: 11px; font-weight: 700; letter-spacing: 2px;
@@ -144,5 +149,13 @@ h1 {
   background: $bg3; color: $text2; font-size: 13px; font-weight: 500; cursor: pointer;
   transition: $transition;
   &:hover, &.active { border-color: $gold; color: $gold; background: rgba(255,215,0,0.08); }
+}
+</style>
+
+<style lang="scss">
+@use '@/assets/variables' as *;
+[data-theme="light"] .hero::before {
+  background-image: url('@/assets/Modoclaro.png');
+  opacity: 0.6;
 }
 </style>
