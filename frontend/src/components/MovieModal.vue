@@ -32,6 +32,21 @@
               </div>
               <p class="modal-overview">{{ movie.overview || 'Sin sinopsis disponible.' }}</p>
 
+              <div v-if="movie.cast && movie.cast.length" class="modal-section">
+                <h4>ELENCO</h4>
+                <div class="cast-row">
+                  <div v-for="actor in movie.cast" :key="actor.id" class="cast-item">
+                    <img
+                      :src="actor.profile_path ? 'https://image.tmdb.org/t/p/w185' + actor.profile_path : 'https://via.placeholder.com/60x60/1a1a2e/FFD700?text=?'"
+                      :alt="actor.name"
+                      class="cast-photo"
+                    />
+                    <span class="cast-name">{{ actor.name }}</span>
+                    <span class="cast-character">{{ actor.character }}</span>
+                  </div>
+                </div>
+              </div>
+
               <div class="modal-section">
                 <h4>DISPONIBLE EN</h4>
                 <div class="providers-row">
@@ -51,9 +66,7 @@
                       :alt="prov.provider_name"
                       class="provider-logo"
                     />
-                    <span class="provider-name-label">
-                      {{ shortName(prov.provider_id, prov.provider_name) }}
-                    </span>
+                    <span class="provider-name-label">{{ shortName(prov.provider_id, prov.provider_name) }}</span>
                     <span v-if="prov.type === 'rent'" class="provider-type">Alquilar</span>
                     <span v-if="prov.type === 'buy'" class="provider-type">Comprar</span>
                   </a>
@@ -68,10 +81,47 @@
 <a :href="'https://www.google.com/search?q=' + encodeURIComponent(movie.title) + '+cines+Buenos+Aires'"
                   target="_blank"
                   class="btn-secondary"
-                >
-                  Ver en cines
-                </a>
+                >Ver en cines</a>
               </div>
+
+              <div class="modal-section reviews-section">
+                <h4>OPINIONES</h4>
+
+                <div v-if="auth.isLoggedIn" class="review-form">
+                  <div class="stars-input">
+                    <button
+                      v-for="n in 5" :key="n"
+                      class="star-btn"
+                      :class="{ active: n <= rating }"
+                      @click="rating = n"
+                    >★</button>
+                  </div>
+                  <textarea
+                    v-model="comment"
+                    placeholder="Escribí tu opinión..."
+                    class="review-textarea"
+                    rows="2"
+                  ></textarea>
+                  <button class="btn-primary" :disabled="isSubmitting || !comment.trim()" @click="handleSendReview">
+                    {{ isSubmitting ? 'Publicando...' : 'Publicar opinión' }}
+                  </button>
+                </div>
+                <p v-else class="no-providers">
+                  <button class="link-btn" @click="modal.openAuth('login')">Iniciá sesión</button> para dejar tu opinión
+                </p>
+
+                <div v-if="reviews.length" class="reviews-list">
+                  <div v-for="r in reviews" :key="r.id" class="review-item">
+                    <div class="review-header">
+                      <span class="review-user">{{ r.user_email?.split('@')[0] }}</span>
+                      <span class="review-stars">{{ '★'.repeat(r.rating) }}{{ '☆'.repeat(5 - r.rating) }}</span>
+                    </div>
+                    <p class="review-comment">{{ r.comment }}</p>
+                  </div>
+                </div>
+                <p v-else class="no-providers">Todavía no hay opiniones para esta película.</p>
+              </div>
+
             </div>
           </div>
         </template>
@@ -83,7 +133,7 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
 import { useModalStore } from '@/stores/modal'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore }  from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 import { api } from '@/services/api'
 
@@ -91,9 +141,13 @@ const modal = useModalStore()
 const auth  = useAuthStore()
 const toast = useToastStore()
 
-const movie   = ref(null)
-const loading = ref(false)
-const isFav   = ref(false)
+const movie       = ref(null)
+const loading     = ref(false)
+const isFav       = ref(false)
+const reviews     = ref([])
+const comment     = ref('')
+const rating      = ref(5)
+const isSubmitting = ref(false)
 
 const PLACEHOLDER = 'https://via.placeholder.com/200x300/1a1a2e/FFD700?text=NO'
 
@@ -142,8 +196,7 @@ const allProviders = computed(() => {
       const key = item.provider_id + '-' + type
       if (!seen.has(key) && item.logo_path && PROVIDERS[item.provider_id]) {
         seen.add(key)
-        const entry = Object.assign({}, item, { type: type })
-        result.push(entry)
+        result.push(Object.assign({}, item, { type: type }))
       }
     }
   }
@@ -164,7 +217,6 @@ function shortName(id, fallback) {
   return '?'
 }
 
-// Cargar reseñas asociadas
 async function fetchReviews(movieId) {
   try {
     reviews.value = await api.getReviews(movieId)
@@ -173,7 +225,6 @@ async function fetchReviews(movieId) {
   }
 }
 
-// Publicar reseña
 async function handleSendReview() {
   if (!comment.value.trim()) return
   isSubmitting.value = true
@@ -186,7 +237,7 @@ async function handleSendReview() {
     reviews.value.unshift(newReview)
     comment.value = ''
     rating.value = 5
-    toast.show('¡Opinión publicada con éxito!', 'success')
+    toast.show('Opinión publicada!', 'success')
   } catch (err) {
     toast.show(err.message, 'error')
   } finally {
@@ -195,33 +246,26 @@ async function handleSendReview() {
 }
 
 watch(() => modal.movieId, async (id) => {
-  if (!id) {
-    movie.value = null
-    reviews.value = []
-    return
-  }
+  if (!id) { movie.value = null; reviews.value = []; return }
   loading.value = true
   isFav.value = false
+  reviews.value = []
   try {
     movie.value = await api.movieDetail(id)
-    // Buscamos las opiniones de la base de datos de manera paralela
     await fetchReviews(id)
   } catch (err) {
     toast.show('Error al cargar la película', 'error')
     loading.value = false
     return
   }
-
   if (auth.isLoggedIn) {
     try {
       const result = await api.checkFavorite(id)
       isFav.value = result.isFavorite
-    } catch (err) {
+    } catch {
       // token vencido — P1 lo arregla
     }
-   
   }
-
   loading.value = false
 })
 
@@ -302,6 +346,27 @@ async function toggleFav() {
   margin-bottom: 20px;
   h4 { font-size: 11px; letter-spacing: 2px; color: $text3; text-transform: uppercase; margin-bottom: 10px; }
 }
+.cast-row {
+  display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px;
+  &::-webkit-scrollbar { height: 3px; }
+  &::-webkit-scrollbar-thumb { background: $bg4; border-radius: 4px; }
+}
+.cast-item {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  flex-shrink: 0; width: 60px;
+}
+.cast-photo {
+  width: 60px; height: 60px; border-radius: 50%; object-fit: cover;
+  border: 1px solid $border;
+}
+.cast-name {
+  font-size: 10px; font-weight: 600; color: $text; text-align: center;
+  line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%;
+}
+.cast-character {
+  font-size: 9px; color: $text3; text-align: center;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%;
+}
 .providers-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; }
 .provider-item {
   display: flex; flex-direction: column; align-items: center; gap: 4px;
@@ -323,11 +388,41 @@ async function toggleFav() {
 .modal-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
 .modal-actions .btn-primary { flex: 1; }
 .modal-actions .btn-secondary { flex: 1; text-align: center; }
+.reviews-section { border-top: 1px solid $border; padding-top: 20px; }
+.review-form {
+  display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;
+}
+.stars-input { display: flex; gap: 4px; }
+.star-btn {
+  font-size: 20px; background: none; border: none;
+  color: $text3; cursor: pointer; transition: color $transition;
+  &.active { color: $gold; }
+  &:hover { color: $gold; }
+}
+.review-textarea {
+  padding: 10px 14px; background: $bg3; border: 1px solid $border;
+  border-radius: $radius-sm; color: $text; font-family: $font-body;
+  font-size: 13px; resize: none; outline: none;
+  &:focus { border-color: $gold; }
+}
+.link-btn {
+  background: none; border: none; color: $gold;
+  font-size: 13px; font-family: $font-body; cursor: pointer;
+}
+.reviews-list { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+.review-item {
+  background: $bg3; border: 1px solid $border; border-radius: $radius-sm; padding: 12px 14px;
+}
+.review-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;
+}
+.review-user { font-size: 12px; font-weight: 600; color: $text; }
+.review-stars { font-size: 12px; color: $gold; letter-spacing: 1px; }
+.review-comment { font-size: 13px; color: $text2; line-height: 1.5; }
 
 @media (max-width: 600px) {
-  .modal-body { flex-direction: column; gap: 20px; }
+  .modal-body { flex-direction: column; }
   .modal-poster { width: 120px; margin-top: -60px; }
   .modal-title { font-size: 24px; }
-  .modal-reviews-section { margin-top: 20px; }
 }
 </style>
