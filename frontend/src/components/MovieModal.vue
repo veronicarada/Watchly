@@ -5,12 +5,15 @@
         <button class="modal-close" @click="modal.closeMovie()">✕</button>
 
         <div v-if="loading" class="loading-dots" style="padding:80px">
-          <span/><span/><span/>
+          <span></span><span></span><span></span>
         </div>
 
         <template v-else-if="movie">
-          <div v-if="movie.backdrop_path" class="modal-backdrop"
-            :style="`background-image:url(https://image.tmdb.org/t/p/original${movie.backdrop_path})`"/>
+          <div
+            v-if="movie.backdrop_path"
+            class="modal-backdrop"
+            :style="'background-image:url(https://image.tmdb.org/t/p/original' + movie.backdrop_path + ')'">
+          </div>
 
           <div class="modal-body">
             <div class="modal-poster">
@@ -32,16 +35,28 @@
               <div class="modal-section">
                 <h4>DISPONIBLE EN</h4>
                 <div class="providers-row">
-                  <template v-if="movie.providers?.flatrate?.length">
-                    <a v-for="p in uniqueProviders" :key="p.provider_id"
-                      class="provider-badge"
-                      :style="`background:${providerColor(p.provider_id)}`"
-                      :href="providerUrl(p.provider_id)"
-                      target="_blank">
-                      {{ providerName(p.provider_id, p.provider_name) }}
-                    </a>
-                  </template>
-                  <span v-else class="no-providers">No disponible en streaming actualmente</span>
+                  <span v-if="!allProviders.length" class="no-providers">
+                    No disponible en streaming actualmente
+                  </span>
+                  
+                  <a v-for="prov in allProviders"
+                    :key="prov.provider_id + prov.type"
+                    class="provider-item"
+                    :href="providerUrl(prov.provider_id)"
+                    target="_blank"
+                    :title="prov.provider_name"
+                  >
+                    <img
+                      :src="'https://image.tmdb.org/t/p/original' + prov.logo_path"
+                      :alt="prov.provider_name"
+                      class="provider-logo"
+                    />
+                    <span class="provider-name-label">
+                      {{ shortName(prov.provider_id, prov.provider_name) }}
+                    </span>
+                    <span v-if="prov.type === 'rent'" class="provider-type">Alquilar</span>
+                    <span v-if="prov.type === 'buy'" class="provider-type">Comprar</span>
+                  </a>
                 </div>
               </div>
 
@@ -50,12 +65,12 @@
                   {{ isFav ? 'GUARDADA' : 'GUARDAR' }}
                 </button>
                 
-                <a :href="`https://www.google.com/search?q=${encodeURIComponent(movie.title)}+cines+Buenos+Aires`"
-                 target="_blank"
-          class="btn-secondary">
-        Ver en cines
-         </a>
-               
+<a :href="'https://www.google.com/search?q=' + encodeURIComponent(movie.title) + '+cines+Buenos+Aires'"
+                  target="_blank"
+                  class="btn-secondary"
+                >
+                  Ver en cines
+                </a>
               </div>
             </div>
           </div>
@@ -81,69 +96,103 @@ const loading = ref(false)
 const isFav   = ref(false)
 
 const PLACEHOLDER = 'https://via.placeholder.com/200x300/1a1a2e/FFD700?text=NO'
+
 const PROVIDERS = {
-  8:    { name: 'Netflix',      color: '#B20710', url: 'https://www.netflix.com' },
-  9:    { name: 'Prime',        color: '#3C78B4', url: 'https://www.primevideo.com' },
-  119:  { name: 'Prime',        color: '#3C78B4', url: 'https://www.primevideo.com' },
-  337:  { name: 'Disney+',      color: '#075F6E', url: 'https://www.disneyplus.com' },
-  390:  { name: 'Disney+',      color: '#075F6E', url: 'https://www.disneyplus.com' },
-  350:  { name: 'Apple TV+',    color: '#A3AAAE', url: 'https://tv.apple.com/ar' },
-  2:    { name: 'Apple TV+',    color: '#A3AAAE', url: 'https://tv.apple.com/ar' },
-  1899: { name: 'Max',          color: '#3B2147', url: 'https://www.max.com/ar/es' },
-  283:  { name: 'Crunchyroll',  color: '#F47721', url: 'https://www.crunchyroll.com' },
-  339:  { name: 'MovistarTV',   color: '#0055FC', url: 'https://www.movistar.com.ar/movistartv' },
-  531:  { name: 'Paramount+',   color: '#004CC2', url: 'https://www.paramountplus.com/ar' },
-  582:  { name: 'Paramount+',   color: '#004CC2', url: 'https://www.paramountplus.com/ar' },
-  167:  { name: 'Claro video',  color: '#DA0000', url: 'https://www.clarovideo.com' },
-  457: { name: 'VIX', color: '#000000', url: 'https://www.vix.com' },
-  11:  { name: 'MUBI',       color: '#8B0000', url: 'https://mubi.com/ar' },
-  201: { name: 'MUBI', color: '#8B0000', url: 'https://mubi.com/ar' },
-  300: { name: 'Pluto TV',   color: '#F15A22', url: 'https://pluto.tv/es-419' },
-  467: { name: 'DIRECTV GO', color: '#00A8E0', url: 'https://www.directvgo.com/ar' },
+  8:    { name: 'Netflix',     url: 'https://www.netflix.com' },
+  9:    { name: 'Prime',       url: 'https://www.primevideo.com' },
+  119:  { name: 'Prime',       url: 'https://www.primevideo.com' },
+  337:  { name: 'Disney+',     url: 'https://www.disneyplus.com' },
+  390:  { name: 'Disney+',     url: 'https://www.disneyplus.com' },
+  350:  { name: 'Apple TV+',   url: 'https://tv.apple.com/ar' },
+  2:    { name: 'Apple TV+',   url: 'https://tv.apple.com/ar' },
+  1899: { name: 'Max',         url: 'https://www.max.com/ar/es' },
+  283:  { name: 'Crunchyroll', url: 'https://www.crunchyroll.com' },
+  531:  { name: 'Paramount+',  url: 'https://www.paramountplus.com/ar' },
+  582:  { name: 'Paramount+',  url: 'https://www.paramountplus.com/ar' },
+  167:  { name: 'Claro Video', url: 'https://www.clarovideo.com' },
+  457:  { name: 'VIX',         url: 'https://www.vix.com' },
+  11:   { name: 'MUBI',        url: 'https://mubi.com/ar' },
+  201:  { name: 'MUBI',        url: 'https://mubi.com/ar' },
+  300:  { name: 'Pluto TV',    url: 'https://pluto.tv/es-419' },
+  467:  { name: 'DIRECTV GO',  url: 'https://www.directvgo.com/ar' },
 }
 
-const posterUrl = computed(() =>
-  movie.value?.poster_path
-    ? `https://image.tmdb.org/t/p/w500${movie.value.poster_path}`
-    : PLACEHOLDER
-)
-const year = computed(() => movie.value?.release_date?.substring(0, 4) || '—')
-
-const uniqueProviders = computed(() => {
-  if (!movie.value?.providers?.flatrate) return []
-  const seen = new Set()
-  return movie.value.providers.flatrate.filter(p => {
-    const name = PROVIDERS[p.provider_id]?.name || p.provider_name
-    if (seen.has(name)) return false
-    seen.add(name)
-    return true
-  })
+const posterUrl = computed(() => {
+  if (movie.value && movie.value.poster_path) {
+    return 'https://image.tmdb.org/t/p/w500' + movie.value.poster_path
+  }
+  return PLACEHOLDER
 })
-function providerColor(id) { return PROVIDERS[id]?.color || '#333' }
-function providerName(id, fallback) {
-  return PROVIDERS[id]?.name || fallback?.substring(0, 6) || '?'
-}
+
+const year = computed(() => {
+  if (movie.value && movie.value.release_date) {
+    return movie.value.release_date.substring(0, 4)
+  }
+  return '—'
+})
+
+const allProviders = computed(() => {
+  if (!movie.value || !movie.value.providers) return []
+  const seen = new Set()
+  const result = []
+  const add = (list, type) => {
+    if (!list) return
+    for (let i = 0; i < list.length; i++) {
+      const item = list[i]
+      const key = item.provider_id + '-' + type
+      if (!seen.has(key) && item.logo_path && PROVIDERS[item.provider_id]) {
+        seen.add(key)
+        const entry = Object.assign({}, item, { type: type })
+        result.push(entry)
+      }
+    }
+  }
+  add(movie.value.providers.flatrate, 'flatrate')
+  add(movie.value.providers.rent, 'rent')
+  add(movie.value.providers.buy, 'buy')
+  return result
+})
+
 function providerUrl(id) {
-  return PROVIDERS[id]?.url || 'https://www.google.com/search?q=' + id
+  if (PROVIDERS[id]) return PROVIDERS[id].url
+  return 'https://www.google.com/search?q=' + encodeURIComponent((movie.value && movie.value.title) || '') + '+streaming+argentina'
+}
+
+function shortName(id, fallback) {
+  if (PROVIDERS[id]) return PROVIDERS[id].name
+  if (fallback) return fallback.substring(0, 10)
+  return '?'
 }
 
 watch(() => modal.movieId, async (id) => {
-  if (!id) { movie.value = null; return }
+  if (!id) {
+    movie.value = null
+    return
+  }
   loading.value = true
+  isFav.value = false
   try {
     movie.value = await api.movieDetail(id)
-    if (auth.isLoggedIn) {
-      const { isFavorite } = await api.checkFavorite(id)
-      isFav.value = isFavorite
+  } catch (err) {
+    toast.show('Error al cargar la película', 'error')
+    loading.value = false
+    return
+  }
+  if (auth.isLoggedIn) {
+    try {
+      const result = await api.checkFavorite(id)
+      isFav.value = result.isFavorite
+    } catch (err) {
+      // token vencido — P1 lo arregla
     }
-  } catch { toast.show('Error al cargar la pelicula', 'error') }
-  finally { loading.value = false }
+  }
+  loading.value = false
 })
 
 async function toggleFav() {
   if (!auth.isLoggedIn) {
     modal.openAuth('login')
-    toast.show('Inicia sesion para guardar favoritas', 'info')
+    toast.show('Iniciá sesión para guardar favoritas', 'info')
     return
   }
   try {
@@ -153,17 +202,19 @@ async function toggleFav() {
       toast.show('Eliminada de favoritas', 'info')
     } else {
       await api.addFavorite({
-        movie_id: movie.value.id,
-        title: movie.value.title,
-        poster_path: movie.value.poster_path,
+        movie_id:     movie.value.id,
+        title:        movie.value.title,
+        poster_path:  movie.value.poster_path,
         release_year: parseInt(year.value) || null,
         vote_average: movie.value.vote_average,
-        overview: movie.value.overview?.substring(0, 300)
+        overview:     movie.value.overview ? movie.value.overview.substring(0, 300) : ''
       })
       isFav.value = true
       toast.show('Guardada en favoritas!', 'success')
     }
-  } catch (err) { toast.show(err.message, 'error') }
+  } catch (err) {
+    toast.show(err.message, 'error')
+  }
 }
 </script>
 
@@ -215,12 +266,22 @@ async function toggleFav() {
   margin-bottom: 20px;
   h4 { font-size: 11px; letter-spacing: 2px; color: $text3; text-transform: uppercase; margin-bottom: 10px; }
 }
-.providers-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.provider-badge {
-  padding: 5px 14px; border-radius: 6px; font-size: 13px; font-weight: 700;
-  color: #fff; letter-spacing: 1px; text-decoration: none;
-  transition: opacity 0.2s;
-  &:hover { opacity: 0.85; }
+.providers-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; }
+.provider-item {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  text-decoration: none; transition: opacity 0.2s;
+  &:hover { opacity: 0.8; }
+}
+.provider-logo {
+  width: 44px; height: 44px; border-radius: 8px; object-fit: cover;
+  border: 1px solid $border;
+}
+.provider-name-label {
+  font-size: 10px; color: $text2; text-align: center;
+  max-width: 52px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.provider-type {
+  font-size: 9px; color: $gold; font-weight: 600; text-transform: uppercase;
 }
 .no-providers { font-size: 13px; color: $text3; }
 .modal-actions { display: flex; gap: 12px; flex-wrap: wrap; }

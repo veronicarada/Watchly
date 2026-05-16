@@ -14,18 +14,7 @@
         <label>AÑO</label>
         <select v-model="filters.year" class="filter-select">
           <option value="">Todos los años</option>
-           <option value="2026">2026</option>
-           <option value="2025">2025</option>
-          <option value="2024">2024</option>
-          <option value="2023">2023</option>
-         <option value="2022">2022</option>
-         <option value="2021">2021</option>
-         <option value="2020">2020</option>
-         <option value="2019">2019</option>
-      <option value="2018">2018</option>
-    <option value="2017">2017</option>
-    <option value="2016">2016</option>
-    <option value="2015">2015</option>
+          <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
         </select>
       </div>
       <div class="filter-group">
@@ -41,9 +30,11 @@
       <button class="btn-primary" @click="applyFilters">FILTRAR</button>
     </div>
 
-    <p v-if="resultCount" class="result-count">{{ resultCount }} resultados</p>
+    <p v-if="resultCount" class="result-count">{{ resultCount }}</p>
 
-    <div v-if="loading" class="loading-dots"><span/><span/><span/></div>
+    <div v-if="loading" class="loading-dots">
+      <span></span><span></span><span></span>
+    </div>
     <p v-else-if="error" class="error-msg">{{ error }}</p>
     <p v-else-if="!movies.length && searched" class="error-msg">No se encontraron resultados 😕</p>
     <div v-else class="movies-grid">
@@ -53,22 +44,34 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import MovieCard from '@/components/MovieCard.vue'
 import { api } from '@/services/api'
 
-const route   = useRoute()
-const movies  = ref([])
-const genres  = ref([])
-const loading = ref(false)
-const error   = ref(null)
-const searched = ref(false)
+const route       = useRoute()
+const movies      = ref([])
+const genres      = ref([])
+const loading     = ref(false)
+const error       = ref(null)
+const searched    = ref(false)
 const resultCount = ref('')
-const filters = ref({ genre: '', year: '', rating: '' })
+const filters     = ref({ genre: '', year: '', rating: '' })
+
+// Años dinámicos desde el año actual hasta 2000
+const currentYear = new Date().getFullYear()
+const years = computed(() => {
+  const result = []
+  for (let y = currentYear; y >= 2000; y--) {
+    result.push(y)
+  }
+  return result
+})
 
 async function applyFilters() {
-  loading.value = true; error.value = null; searched.value = true
+  loading.value = true
+  error.value = null
+  searched.value = true
   try {
     const params = {}
     if (filters.value.genre)  params.genre  = filters.value.genre
@@ -76,24 +79,36 @@ async function applyFilters() {
     if (filters.value.rating) params.rating = filters.value.rating
     const data = await api.discover(params)
     movies.value = data.results
-    resultCount.value = `${data.total_results?.toLocaleString() || data.results.length} resultados`
-  } catch { error.value = 'Error al filtrar películas' }
-  finally { loading.value = false }
+    resultCount.value = (data.total_results?.toLocaleString() || data.results.length) + ' resultados'
+  } catch {
+    error.value = 'Error al filtrar películas'
+  } finally {
+    loading.value = false
+  }
 }
 
 async function searchByQuery(q) {
-  loading.value = true; error.value = null; searched.value = true
+  loading.value = true
+  error.value = null
+  searched.value = true
   try {
     const data = await api.search(q)
     movies.value = data.results
-    resultCount.value = `${data.results.length} resultados para "${q}"`
-  } catch { error.value = 'Error al buscar' }
-  finally { loading.value = false }
+    resultCount.value = data.results.length + ' resultados para "' + q + '"'
+  } catch {
+    error.value = 'Error al buscar'
+  } finally {
+    loading.value = false
+  }
 }
 
 onMounted(async () => {
-  const genreData = await api.genres()
-genres.value = genreData?.genres || []
+  try {
+    const genreData = await api.genres()
+    genres.value = genreData?.genres || []
+  } catch {
+    genres.value = []
+  }
   if (route.query.q) searchByQuery(route.query.q)
   else applyFilters()
 })
@@ -103,7 +118,9 @@ watch(() => route.query.q, q => { if (q) searchByQuery(q) })
 
 <style lang="scss" scoped>
 @use '@/assets/variables' as *;
-.filters-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 28px; align-items: flex-end; }
+.filters-row {
+  display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 28px; align-items: flex-end;
+}
 .filter-group {
   display: flex; flex-direction: column; gap: 4px;
   label { font-size: 11px; letter-spacing: 1px; color: $text3; text-transform: uppercase; }
