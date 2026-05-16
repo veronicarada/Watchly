@@ -38,7 +38,7 @@
 </p>
         </form>
        <!-- Forgot Password -->
-<form v-if="modal.authTab === 'forgot'" class="auth-form" @submit.prevent="handleForgot">
+<form v-else-if="modal.authTab === 'forgot'" class="auth-form" @submit.prevent="handleForgot">
   <div class="form-group">
     <label>EMAIL</label>
     <input v-model="forgotEmail" type="email" placeholder="tu@email.com" required/>
