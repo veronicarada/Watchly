@@ -21,8 +21,10 @@
       </template>
       <template v-else>
         <div class="user-info">
-          <div class="user-avatar">{{ auth.user?.username?.[0]?.toUpperCase() }}</div>
-          <span class="username">{{ auth.user?.username }}</span>
+ 
+        <div class="user-avatar" @click="router.push('/perfil')" style="cursor:pointer">{{ userAvatar || auth.user?.username?.[0]?.toUpperCase() }}</div>    
+
+<span class="username" @click="router.push('/perfil')" style="cursor:pointer">{{ auth.user?.username }}</span>
           <!-- Dropdown de tema -->
           <div class="theme-menu" :class="{ open: themeOpen }">
            <button class="theme-trigger" @click.stop="themeOpen = !themeOpen" title="Cambiar tema">
@@ -57,7 +59,8 @@ const router   = useRouter()
 const auth     = useAuthStore()
 const toast    = useToastStore()
 const modal    = useModalStore()
-const themeOpen = ref(false) 
+const themeOpen = ref(false)
+const userAvatar = ref(localStorage.getItem('watchly_avatar') || '') 
 
 function openAuth(tab) { modal.openAuth(tab) }
 function setTheme(mode) {
@@ -74,9 +77,15 @@ function handleLogout() {
 function closeOnOutside(e) {
   if (!e.target.closest('.theme-menu')) themeOpen.value = false
 }
-onMounted(() => document.addEventListener('click', closeOnOutside))
-onUnmounted(() => document.removeEventListener('click', closeOnOutside))
-
+onMounted(() => {
+  document.addEventListener('click', closeOnOutside)
+  window.addEventListener('avatar-updated', () => {
+    userAvatar.value = localStorage.getItem('watchly_avatar') || ''
+  })
+})
+onUnmounted(() => {
+  document.removeEventListener('click', closeOnOutside)
+})
 </script>
 
 <style lang="scss" scoped>

@@ -21,6 +21,7 @@ export const api = {
   register: (username, email, password) => request('/auth/register', 'POST', { username, email, password }),
   login: (email, password) => request('/auth/login', 'POST', { email, password }),
   googleLogin: (credential) => request('/auth/google', 'POST', { credential }),
+  updateProfile: (username) => request('/auth/profile', 'PUT', { username }, true),
 
   // Movies
   search: (q, page = 1) => request(`/movies/search?q=${encodeURIComponent(q)}&page=${page}`),
@@ -36,7 +37,7 @@ export const api = {
   addFavorite: (movie) => request('/favorites', 'POST', movie, true),
   removeFavorite: (movieId) => request(`/favorites/${movieId}`, 'DELETE', null, true),
   checkFavorite: (movieId) => request(`/favorites/check/${movieId}`, 'GET', null, true),
-
+  
   // Groups
   createGroup: () => request('/groups/create', 'POST', {}, true),
   joinGroup: (code) => request('/groups/join', 'POST', { code }, true),
