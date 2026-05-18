@@ -42,12 +42,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useModalStore } from '@/stores/modal'
 import MovieCard from '@/components/MovieCard.vue'
 import { api } from '@/services/api'
 
 const router = useRouter()
+const route = useRoute()
+const modal = useModalStore()
 const query  = ref('')
 const movies = ref([])
 const loading = ref(false)
@@ -99,7 +102,15 @@ function doSearch() {
 onMounted(() => {
   loadMovies()
   loadNowPlaying()
+  if (route.query.login === 'true') {
+    modal.openAuth('login')
+  }
 })
+
+watch(() => route.query.login, (val) => {
+  if (val === 'true') modal.openAuth('login')
+})
+
 </script>
 
 <style lang="scss" scoped>
