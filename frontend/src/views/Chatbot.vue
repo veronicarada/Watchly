@@ -4,7 +4,7 @@
     {{ isOpen ? '✕' : '🎬' }}
   </button>
 
-  <!-- Panel del chat -->
+
   <Transition name="chat">
     <div v-if="isOpen" class="chat-overlay">
       <div class="chat-container">
