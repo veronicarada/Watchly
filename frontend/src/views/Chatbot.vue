@@ -1,5 +1,5 @@
 <template>
-  <!-- Burbuja flotante -->
+
   <button class="chat-bubble" @click="isOpen = !isOpen">
     {{ isOpen ? '✕' : '🎬' }}
   </button>
@@ -11,7 +11,7 @@
         <div class="chat-header">
           <div>
             <h1>🎬 Asistente de cine</h1>
-            <p>Preguntame sobre cualquier película o pedime recomendaciones</p>
+            <p>Películas, series, documentales y más</p>
           </div>
           <button class="btn-clear" @click="clearChat">🗑 Borrar</button>
         </div>
@@ -28,11 +28,20 @@
           </div>
         </div>
 
+        <div class="chat-chips" v-if="inputFocused && !input.trim()">
+          <button v-for="chip in chips" :key="chip" class="chip" 
+            @mousedown.prevent="sendChip(chip)">
+            {{ chip }}
+          </button>
+        </div>
+
         <div class="chat-input">
           <input
             v-model="input"
             @keydown.enter="send"
-            placeholder="Ej: ¿Quién dirigió Inception?..."
+            @focus="inputFocused = true"
+            @blur="inputFocused = false"
+            placeholder="Ej: ¿Qué serie me recomendás de terror?..."
             :disabled="loading"
           />
           <button @click="send" :disabled="loading || !input.trim()">
@@ -48,17 +57,57 @@
 import { ref, nextTick } from 'vue'
 
 const isOpen = ref(false)
-const INITIAL_MESSAGE = { role: 'assistant', content: '¡Hola! Soy tu asistente de cine 🎬 Podés preguntarme sobre cualquier película — su historia, reparto, director, curiosidades — o pedirme recomendaciones según lo que tengas ganas de ver.' }
+
+const INITIAL_MESSAGE = {
+  role: 'assistant',
+  content: '¡Hola! Soy tu asistente de entretenimiento 🎬 Puedo recomendarte películas, series, documentales y más. También aprendo tus gustos — si algo no te gusta, decime y no te lo recomendaré.'
+}
 
 const savedMessages = localStorage.getItem('watchly-chat')
 const messages = ref(savedMessages ? JSON.parse(savedMessages) : [INITIAL_MESSAGE])
+
+const savedPrefs = localStorage.getItem('watchly-prefs')
+const preferences = ref(savedPrefs ? JSON.parse(savedPrefs) : { likes: [], dislikes: [] })
+
 const input = ref('')
 const loading = ref(false)
 const messagesEl = ref(null)
+const inputFocused = ref(false)
+
+const chips = [
+  '🎬 Recomendar película',
+  '📺 Recomendar serie',
+  '🎥 Recomendar documental',
+  '😱 Película de terror',
+  '😂 Comedia',
+  '💕 Romance',
+  '🏆 Mejor puntuadas',
+  '🎭 Telenovela',
+  'Que pelicula o serie puedo ver hoy?',
+]
+
+function sendChip(text) {
+  input.value = text
+  send()
+}
 
 function clearChat() {
   messages.value = [INITIAL_MESSAGE]
   localStorage.removeItem('watchly-chat')
+}
+
+function detectPreferences(text) {
+  const lower = text.toLowerCase()
+  const genres = ['terror', 'comedia', 'romance', 'drama', 'acción', 'sci-fi', 'documental', 'animación', 'thriller']
+  genres.forEach(g => {
+    if (lower.includes(`no me gusta ${g}`) || lower.includes(`odio el ${g}`) || lower.includes(`no me gustan ${g}`)) {
+      if (!preferences.value.dislikes.includes(g)) preferences.value.dislikes.push(g)
+    }
+    if (lower.includes(`me gusta ${g}`) || lower.includes(`amo el ${g}`) || lower.includes(`me encanta ${g}`)) {
+      if (!preferences.value.likes.includes(g)) preferences.value.likes.push(g)
+    }
+  })
+  localStorage.setItem('watchly-prefs', JSON.stringify(preferences.value))
 }
 
 async function send() {
@@ -66,6 +115,7 @@ async function send() {
 
   const userMsg = input.value.trim()
   messages.value.push({ role: 'user', content: userMsg })
+  detectPreferences(userMsg)
   input.value = ''
   loading.value = true
 
@@ -73,11 +123,12 @@ async function send() {
   messagesEl.value?.scrollTo({ top: messagesEl.value.scrollHeight, behavior: 'smooth' })
 
   try {
-    const response = await fetch('http://localhost:3001/api/chatbot', {
+    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/chatbot`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        messages: messages.value.map(m => ({ role: m.role, content: m.content }))
+        messages: messages.value.map(m => ({ role: m.role, content: m.content })),
+        preferences: preferences.value
       })
     })
 
@@ -118,7 +169,7 @@ async function send() {
 }
 
 .chat-container {
-  width: 420px; height: 600px;
+  width: 420px; height: 620px;
   background: $bg2; border: 1px solid $border;
   border-radius: 16px; overflow: hidden;
   display: flex; flex-direction: column;
@@ -160,6 +211,20 @@ async function send() {
 
   .user &      { background: $gold; color: #000; font-weight: 500; border-bottom-right-radius: 4px; }
   .assistant & { background: $bg3; color: $text; border-bottom-left-radius: 4px; }
+}
+
+.chat-chips {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 10px 16px;
+  border-top: 1px solid $border;
+}
+
+.chip {
+  padding: 5px 12px; border-radius: 20px;
+  background: $bg3; border: 1px solid $border;
+  color: $text2; font-size: 11px; cursor: pointer;
+  transition: $transition;
+  &:hover { border-color: $gold; color: $gold; }
 }
 
 .chat-input {

@@ -2,7 +2,11 @@ const express = require('express')
 const router = express.Router()
 
 router.post('/', async (req, res) => {
-  const { messages } = req.body
+  const { messages, preferences } = req.body
+
+  const prefsText = preferences
+    ? `\nPreferencias del usuario: le gustan ${preferences.likes?.join(', ') || 'variado'} y NO le gustan ${preferences.dislikes?.join(', ') || 'nada en particular'}.`
+    : ''
 
   try {
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -16,12 +20,19 @@ router.post('/', async (req, res) => {
         messages: [
           {
             role: 'system',
-            content: `Sos un asistente experto en cine dentro de Watchly, una app para descubrir películas.
+            content: `Sos un asistente experto en entretenimiento dentro de Watchly, una app para descubrir contenido audiovisual.
 Respondé siempre en español, de forma amigable y concisa.
-Podés ayudar con dos cosas:
-1. INFORMACIÓN DE PELÍCULAS: reparto, director, año, curiosidades, historia, premios, etc.
-2. RECOMENDACIONES: sugerí películas según gustos o estado de ánimo del usuario.
-Si te preguntan algo que no tiene que ver con cine, deciles amablemente que solo podés ayudar con temas de películas.`
+Podés ayudar con:
+1. PELÍCULAS: reparto, director, año, curiosidades, historia, premios, cartelera actual, últimos lanzamientos.
+2. SERIES Y MINISERIES: temporadas, personajes, plataformas, curiosidades, últimas temporadas.
+3. DOCUMENTALES: temática, director, plataformas donde verlos.
+4. TELENOVELAS Y REALITY SHOWS: información general, dónde verlos.
+5. RECOMENDACIONES: sugerí contenido según géneros, estado de ánimo, director favorito o preferencias del usuario.
+Cuando recomiendes, usá este formato limpio:
+- Título (año) — Una línea de descripción corta.
+No uses asteriscos ni markdown. Solo texto plano y guiones.
+Si el usuario menciona que algo no le gusta, recordalo para no recomendarlo.${prefsText}
+Si te preguntan algo que no tiene que ver con entretenimiento audiovisual, deciles amablemente que solo podés ayudar con esos temas.`
           },
           ...messages.map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content }))
         ]
@@ -29,7 +40,6 @@ Si te preguntan algo que no tiene que ver con cine, deciles amablemente que solo
     })
 
     const data = await response.json()
-    console.log('Respuesta OpenRouter:', JSON.stringify(data, null, 2))
     const reply = data.choices?.[0]?.message?.content || 'No pude generar una respuesta.'
     res.json({ reply })
   } catch (err) {
