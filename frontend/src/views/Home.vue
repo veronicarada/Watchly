@@ -7,9 +7,28 @@
         <h1>¿QUÉ VAS A<br><em>VER HOY?</em></h1>
         <p class="hero-sub">Buscá películas y descubrí dónde verlas.</p>
         <form class="search-bar" @submit.prevent="doSearch">
-          <input v-model="query" type="text" placeholder="Buscar película..." autocomplete="off"/>
-          <button type="submit" class="btn-search">Buscar</button>
-        </form>
+  <div class="search-wrapper">
+    <input
+      v-model="query"
+      type="text"
+      placeholder="Buscar película..."
+      autocomplete="off"
+      @input="onInput"
+      @blur="hideSuggestions"
+    />
+    <ul v-if="suggestions.length" class="suggestions">
+      <li v-for="s in suggestions" :key="s.id" @mousedown.prevent="selectSuggestion(s)">
+        <img v-if="s.poster_path" :src="`https://image.tmdb.org/t/p/w45${s.poster_path}`"/>
+        <span class="no-poster" v-else>🎬</span>
+        <div>
+          <span class="sug-title">{{ s.title }}</span>
+          <span class="sug-year">{{ s.release_date?.slice(0,4) }}</span>
+        </div>
+      </li>
+    </ul>
+  </div>
+  <button type="submit" class="btn-search">Buscar</button>
+</form>
         <div class="genre-pills">
           <button :class="['genre-pill', { active: activeGenre === null }]" @click="filterGenre(null)">Todos</button>
           <button v-for="g in quickGenres" :key="g.id" :class="['genre-pill', { active: activeGenre === g.id }]" @click="filterGenre(g.id)">{{ g.name }}</button>
@@ -52,6 +71,8 @@ const router = useRouter()
 const route = useRoute()
 const modal = useModalStore()
 const query  = ref('')
+const suggestions = ref([])
+let searchTimeout = null
 const movies = ref([])
 const loading = ref(false)
 const error   = ref(null)
@@ -99,6 +120,27 @@ function doSearch() {
   router.push({ path: '/explorar', query: { q: query.value } })
 }
 
+function onInput() {
+  clearTimeout(searchTimeout)
+  if (query.value.length < 2) { suggestions.value = []; return }
+  searchTimeout = setTimeout(async () => {
+    try {
+      const data = await api.search(query.value)
+      suggestions.value = data.results.slice(0, 10)
+    } catch { suggestions.value = [] }
+  }, 300)
+}
+
+function hideSuggestions() {
+  setTimeout(() => { suggestions.value = [] }, 150)
+}
+
+function selectSuggestion(movie) {
+  suggestions.value = []
+  query.value = ''
+  modal.openMovie(movie.id)
+}
+
 onMounted(() => {
   loadMovies()
   loadNowPlaying()
@@ -140,20 +182,44 @@ h1 {
 .hero-sub { color: $text2; font-size: 16px; margin-bottom: 32px; max-width: 500px; }
 .search-bar {
   display: flex; max-width: 560px;
-  background: $bg3; border: 1px solid $border; border-radius: $radius; overflow: hidden;
+  background: $bg3; border: 1px solid $border; border-radius: $radius; overflow: visible;
   transition: border-color $transition;
   &:focus-within { border-color: $gold; }
-  input {
-    flex: 1; padding: 14px 18px; background: transparent; border: none;
-    color: $text; font-size: 15px; font-family: $font-body; outline: none;
-    &::placeholder { color: $text3; }
-  }
 }
 .btn-search {
   padding: 12px 24px; background: $gold; color: #000;
   font-size: 14px; font-weight: 700; border: none; transition: background $transition;
   &:hover { background: $gold2; }
 }
+
+.search-wrapper {
+  flex: 1; position: relative;
+  input {
+    width: 100%; padding: 14px 18px; background: transparent; border: none;
+    color: $text; font-size: 15px; font-family: $font-body; outline: none;
+    &::placeholder { color: $text3; }
+  }
+}
+
+.suggestions {
+  position: absolute; top: 100%; left: 0; right: 0;
+  background: $bg2; border: 1px solid $border; border-radius: $radius-sm;
+  overflow: hidden; z-index: 200; list-style: none;
+  margin: 4px 0 0; padding: 0; box-shadow: $shadow;
+
+  li {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; cursor: pointer; transition: $transition;
+    &:hover { background: $bg3; }
+
+    img { width: 32px; height: 48px; object-fit: cover; border-radius: 4px; }
+    .no-poster { width: 32px; height: 48px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  }
+}
+
+.sug-title { font-size: 13px; font-weight: 600; display: block; }
+.sug-year { font-size: 11px; color: $text3; }
+
 .genre-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
 .genre-pill {
   padding: 6px 16px; border-radius: 20px; border: 1px solid $border;

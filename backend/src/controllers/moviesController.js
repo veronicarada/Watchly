@@ -10,10 +10,19 @@ const searchMovies = async (req, res) => {
   const { q, page = 1 } = req.query;
   if (!q) return res.status(400).json({ error: 'Parámetro q requerido' });
   try {
-    const { data } = await tmdb.get('/search/movie', {
-      params: { query: q, page, include_adult: false }
+    const [esData, enData] = await Promise.all([
+      tmdb.get('/search/movie', { params: { query: q, page, include_adult: false, language: 'es-AR' } }),
+      tmdb.get('/search/movie', { params: { query: q, page, include_adult: false, language: 'en-US' } })
+    ]);
+
+    const seen = new Set();
+    const combined = [...esData.data.results, ...enData.data.results].filter(m => {
+      if (seen.has(m.id)) return false;
+      seen.add(m.id);
+      return true;
     });
-    res.json(data);
+
+    res.json({ ...esData.data, results: combined });
   } catch (err) {
     console.error('searchMovies:', err.message);
     res.status(500).json({ error: 'Error al buscar películas' });
