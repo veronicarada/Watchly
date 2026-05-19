@@ -1,6 +1,6 @@
 <template>
 
-  <button class="chat-bubble" @click="isOpen = !isOpen">
+  <button class="chat-bubble" @click="auth.isLoggedIn ? isOpen = !isOpen : modal.openAuth('login')">
     {{ isOpen ? '✕' : '🎬' }}
   </button>
 
@@ -55,6 +55,10 @@
 
 <script setup>
 import { ref, nextTick } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import { useModalStore } from '@/stores/modal'
+const auth = useAuthStore()
+const modal = useModalStore()
 
 const isOpen = ref(false)
 
