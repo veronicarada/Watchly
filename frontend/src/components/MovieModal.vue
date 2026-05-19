@@ -24,11 +24,12 @@
                 <span v-for="g in movie.genres" :key="g.id" class="genre-tag">{{ g.name }}</span>
               </div>
               <h2 class="modal-title">{{ movie.title }}</h2>
+              <span v-if="movie.media_type === 'tv'" class="media-badge">📺 Serie</span>
               <p v-if="movie.tagline" class="modal-tagline">"{{ movie.tagline }}"</p>
               <div class="modal-meta">
                 <span class="rating-badge">★ {{ movie.vote_average?.toFixed(1) }}</span>
                 <span>{{ year }}</span>
-                <span>{{ movie.runtime ? movie.runtime + ' min' : '—' }}</span>
+                <span>{{ movie.runtime ? movie.runtime + ' min' : (movie.episode_run_time?.[0] ? movie.episode_run_time[0] + ' min/ep' : '—') }}</span>
               </div>
               <p class="modal-overview">{{ movie.overview || 'Sin sinopsis disponible.' }}</p>
 
@@ -53,8 +54,7 @@
                   <span v-if="!allProviders.length" class="no-providers">
                     No disponible en streaming actualmente
                   </span>
-                  
-                <a    v-for="prov in allProviders"
+                  <a v-for="prov in allProviders"
                     :key="prov.provider_id + prov.type"
                     class="provider-item"
                     :href="providerUrl(prov.provider_id)"
@@ -77,8 +77,7 @@
                 <button class="btn-primary" :class="{ active: isFav }" @click="toggleFav">
                   {{ isFav ? 'GUARDADA' : 'GUARDAR' }}
                 </button>
-                
-<a :href="'https://www.google.com/search?q=' + encodeURIComponent(movie.title) + '+cines+Buenos+Aires'"
+                <a :href="'https://www.google.com/search?q=' + encodeURIComponent(movie.title) + '+cines+Buenos+Aires'"
                   target="_blank"
                   class="btn-secondary"
                 >Ver en cines</a>
@@ -86,7 +85,6 @@
 
               <div class="modal-section reviews-section">
                 <h4>OPINIONES</h4>
-
                 <div v-if="auth.isLoggedIn" class="review-form">
                   <div class="stars-input">
                     <button
@@ -109,7 +107,6 @@
                 <p v-else class="no-providers">
                   <button class="link-btn" @click="modal.openAuth('login')">Iniciá sesión</button> para dejar tu opinión
                 </p>
-
                 <div v-if="reviews.length" class="reviews-list">
                   <div v-for="r in reviews" :key="r.id" class="review-item">
                     <div class="review-header">
@@ -141,12 +138,12 @@ const modal = useModalStore()
 const auth  = useAuthStore()
 const toast = useToastStore()
 
-const movie       = ref(null)
-const loading     = ref(false)
-const isFav       = ref(false)
-const reviews     = ref([])
-const comment     = ref('')
-const rating      = ref(5)
+const movie        = ref(null)
+const loading      = ref(false)
+const isFav        = ref(false)
+const reviews      = ref([])
+const comment      = ref('')
+const rating       = ref(5)
 const isSubmitting = ref(false)
 
 const PLACEHOLDER = 'https://via.placeholder.com/200x300/1a1a2e/FFD700?text=NO'
@@ -171,32 +168,27 @@ const PROVIDERS = {
   467:  { name: 'DIRECTV GO',  url: 'https://www.directvgo.com/ar' },
 }
 
-const posterUrl = computed(() => {
-  if (movie.value && movie.value.poster_path) {
-    return 'https://image.tmdb.org/t/p/w500' + movie.value.poster_path
-  }
-  return PLACEHOLDER
-})
+const posterUrl = computed(() =>
+  movie.value?.poster_path
+    ? 'https://image.tmdb.org/t/p/w500' + movie.value.poster_path
+    : PLACEHOLDER
+)
 
-const year = computed(() => {
-  if (movie.value && movie.value.release_date) {
-    return movie.value.release_date.substring(0, 4)
-  }
-  return '—'
-})
+const year = computed(() =>
+  movie.value?.release_date?.substring(0, 4) || '—'
+)
 
 const allProviders = computed(() => {
-  if (!movie.value || !movie.value.providers) return []
+  if (!movie.value?.providers) return []
   const seen = new Set()
   const result = []
   const add = (list, type) => {
     if (!list) return
-    for (let i = 0; i < list.length; i++) {
-      const item = list[i]
+    for (const item of list) {
       const key = item.provider_id + '-' + type
       if (!seen.has(key) && item.logo_path && PROVIDERS[item.provider_id]) {
         seen.add(key)
-        result.push(Object.assign({}, item, { type: type }))
+        result.push({ ...item, type })
       }
     }
   }
@@ -207,14 +199,12 @@ const allProviders = computed(() => {
 })
 
 function providerUrl(id) {
-  if (PROVIDERS[id]) return PROVIDERS[id].url
-  return 'https://www.google.com/search?q=' + encodeURIComponent((movie.value && movie.value.title) || '') + '+streaming+argentina'
+  return PROVIDERS[id]?.url ||
+    'https://www.google.com/search?q=' + encodeURIComponent(movie.value?.title || '') + '+streaming+argentina'
 }
 
 function shortName(id, fallback) {
-  if (PROVIDERS[id]) return PROVIDERS[id].name
-  if (fallback) return fallback.substring(0, 10)
-  return '?'
+  return PROVIDERS[id]?.name || fallback?.substring(0, 10) || '?'
 }
 
 async function fetchReviews(movieId) {
@@ -231,12 +221,12 @@ async function handleSendReview() {
   try {
     const newReview = await api.createReview({
       movie_id: movie.value.id,
-      rating: rating.value,
-      comment: comment.value
+      rating:   rating.value,
+      comment:  comment.value
     })
     reviews.value.unshift(newReview)
     comment.value = ''
-    rating.value = 5
+    rating.value  = 5
     toast.show('Opinión publicada!', 'success')
   } catch (err) {
     toast.show(err.message, 'error')
@@ -245,26 +235,32 @@ async function handleSendReview() {
   }
 }
 
-watch(() => modal.movieId, async (id) => {
-  if (!id) { movie.value = null; reviews.value = []; return }
+watch(() => modal.movieId, async (idWithType) => {
+  if (!idWithType) { movie.value = null; reviews.value = []; return }
+
+  // Soporta formato "123" o "123_tv"
+  const parts    = String(idWithType).split('_')
+  const id       = parts[0]
+  const type     = parts[1] || 'movie'
+
   loading.value = true
-  isFav.value = false
+  isFav.value   = false
   reviews.value = []
+
   try {
-    movie.value = await api.movieDetail(id)
+    movie.value = await api.movieDetail(id, type)
     await fetchReviews(id)
   } catch (err) {
-    toast.show('Error al cargar la película', 'error')
+    toast.show('Error al cargar el detalle', 'error')
     loading.value = false
     return
   }
+
   if (auth.isLoggedIn) {
     try {
       const result = await api.checkFavorite(id)
       isFav.value = result.isFavorite
-    } catch {
-      // token vencido — P1 lo arregla
-    }
+    } catch { }
   }
   loading.value = false
 })
@@ -287,7 +283,7 @@ async function toggleFav() {
         poster_path:  movie.value.poster_path,
         release_year: parseInt(year.value) || null,
         vote_average: movie.value.vote_average,
-        overview:     movie.value.overview ? movie.value.overview.substring(0, 300) : ''
+        overview:     movie.value.overview?.substring(0, 300) || ''
       })
       isFav.value = true
       toast.show('Guardada en favoritas!', 'success')
@@ -333,6 +329,11 @@ async function toggleFav() {
 .modal-details { flex: 1; min-width: 0; }
 .modal-genres { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
 .genre-tag { padding: 3px 10px; border: 1px solid $border; border-radius: 4px; font-size: 11px; color: $text2; }
+.media-badge {
+  display: inline-block; padding: 2px 10px; background: rgba(255,215,0,0.1);
+  border: 1px solid rgba(255,215,0,0.3); border-radius: 4px;
+  font-size: 11px; color: $gold; margin-bottom: 8px;
+}
 .modal-title { font-family: $font-display; font-size: 32px; letter-spacing: 1px; margin-bottom: 4px; }
 .modal-tagline { color: $text3; font-style: italic; font-size: 14px; margin-bottom: 12px; }
 .modal-meta { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; flex-wrap: wrap; }
@@ -351,71 +352,28 @@ async function toggleFav() {
   &::-webkit-scrollbar { height: 3px; }
   &::-webkit-scrollbar-thumb { background: $bg4; border-radius: 4px; }
 }
-.cast-item {
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  flex-shrink: 0; width: 60px;
-}
-.cast-photo {
-  width: 60px; height: 60px; border-radius: 50%; object-fit: cover;
-  border: 1px solid $border;
-}
-.cast-name {
-  font-size: 10px; font-weight: 600; color: $text; text-align: center;
-  line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%;
-}
-.cast-character {
-  font-size: 9px; color: $text3; text-align: center;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%;
-}
+.cast-item { display: flex; flex-direction: column; align-items: center; gap: 4px; flex-shrink: 0; width: 60px; }
+.cast-photo { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 1px solid $border; }
+.cast-name { font-size: 10px; font-weight: 600; color: $text; text-align: center; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; }
+.cast-character { font-size: 9px; color: $text3; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; }
 .providers-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; }
-.provider-item {
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  text-decoration: none; transition: opacity 0.2s;
-  &:hover { opacity: 0.8; }
-}
-.provider-logo {
-  width: 44px; height: 44px; border-radius: 8px; object-fit: cover;
-  border: 1px solid $border;
-}
-.provider-name-label {
-  font-size: 10px; color: $text2; text-align: center;
-  max-width: 52px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.provider-type {
-  font-size: 9px; color: $gold; font-weight: 600; text-transform: uppercase;
-}
+.provider-item { display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; transition: opacity 0.2s; &:hover { opacity: 0.8; } }
+.provider-logo { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; border: 1px solid $border; }
+.provider-name-label { font-size: 10px; color: $text2; text-align: center; max-width: 52px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.provider-type { font-size: 9px; color: $gold; font-weight: 600; text-transform: uppercase; }
 .no-providers { font-size: 13px; color: $text3; }
 .modal-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
 .modal-actions .btn-primary { flex: 1; }
 .modal-actions .btn-secondary { flex: 1; text-align: center; }
 .reviews-section { border-top: 1px solid $border; padding-top: 20px; }
-.review-form {
-  display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;
-}
+.review-form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
 .stars-input { display: flex; gap: 4px; }
-.star-btn {
-  font-size: 20px; background: none; border: none;
-  color: $text3; cursor: pointer; transition: color $transition;
-  &.active { color: $gold; }
-  &:hover { color: $gold; }
-}
-.review-textarea {
-  padding: 10px 14px; background: $bg3; border: 1px solid $border;
-  border-radius: $radius-sm; color: $text; font-family: $font-body;
-  font-size: 13px; resize: none; outline: none;
-  &:focus { border-color: $gold; }
-}
-.link-btn {
-  background: none; border: none; color: $gold;
-  font-size: 13px; font-family: $font-body; cursor: pointer;
-}
+.star-btn { font-size: 20px; background: none; border: none; color: $text3; cursor: pointer; transition: color $transition; &.active { color: $gold; } &:hover { color: $gold; } }
+.review-textarea { padding: 10px 14px; background: $bg3; border: 1px solid $border; border-radius: $radius-sm; color: $text; font-family: $font-body; font-size: 13px; resize: none; outline: none; &:focus { border-color: $gold; } }
+.link-btn { background: none; border: none; color: $gold; font-size: 13px; font-family: $font-body; cursor: pointer; }
 .reviews-list { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
-.review-item {
-  background: $bg3; border: 1px solid $border; border-radius: $radius-sm; padding: 12px 14px;
-}
-.review-header {
-  display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;
-}
+.review-item { background: $bg3; border: 1px solid $border; border-radius: $radius-sm; padding: 12px 14px; }
+.review-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
 .review-user { font-size: 12px; font-weight: 600; color: $text; }
 .review-stars { font-size: 12px; color: $gold; letter-spacing: 1px; }
 .review-comment { font-size: 13px; color: $text2; line-height: 1.5; }

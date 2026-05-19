@@ -83,7 +83,7 @@ const chips = [
   '💕 Romance',
   '🏆 Mejor puntuadas',
   '🎭 Telenovela',
-  'Que pelicula o serie puedo ver hoy?',
+  'Que pelicula o serie puedo ver hoy?🎬',
 ]
 
 function sendChip(text) {

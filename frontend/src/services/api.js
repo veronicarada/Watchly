@@ -26,7 +26,7 @@ export const api = {
   // Movies
   search: (q, page = 1) => request(`/movies/search?q=${encodeURIComponent(q)}&page=${page}`),
   popular: (page = 1) => request(`/movies/popular?page=${page}`),
-  movieDetail: (id) => request(`/movies/${id}`),
+  movieDetail: (id, type = 'movie') => request(`/movies/${id}?type=${type}`),
   discover: (params = {}) => request(`/movies/discover?${new URLSearchParams(params)}`),
   random: (genre, rating = 6) => request(`/movies/random?rating=${rating}${genre ? '&genre=' + genre : ''}`),
   nowPlaying: () => request('/movies/now-playing'),
