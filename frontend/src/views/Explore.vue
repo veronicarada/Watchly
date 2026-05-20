@@ -38,7 +38,7 @@
     <p v-else-if="error" class="error-msg">{{ error }}</p>
     <p v-else-if="!movies.length && searched" class="error-msg">No se encontraron resultados 😕</p>
     <div v-else class="movies-grid">
-      <MovieCard v-for="m in movies" :key="m.id" :movie="m"/>
+      <MovieCard v-for="m in movies" :key="m.id + '_' + (m.media_type || 'movie')" :movie="m"/>
     </div>
   </div>
 </template>
@@ -93,7 +93,7 @@ async function searchByQuery(q) {
   searched.value = true
   try {
     const data = await api.search(q)
-    movies.value = data.results
+    movies.value = data.results.sort((a, b) => b.popularity - a.popularity)
     resultCount.value = data.results.length + ' resultados para "' + q + '"'
   } catch {
     error.value = 'Error al buscar'

@@ -126,6 +126,7 @@ function onInput() {
   searchTimeout = setTimeout(async () => {
     try {
       const data = await api.search(query.value)
+      console.log('Resultados:', data.results.length, data.results.map(r => r.title + ' - ' + r.media_type))
       suggestions.value = data.results.slice(0, 10)
     } catch { suggestions.value = [] }
   }, 300)
@@ -138,7 +139,8 @@ function hideSuggestions() {
 function selectSuggestion(movie) {
   suggestions.value = []
   query.value = ''
-  modal.openMovie(movie.id)
+  const id = movie.media_type === 'tv' ? `${movie.id}_tv` : movie.id
+  modal.openMovie(id)
 }
 
 onMounted(() => {
