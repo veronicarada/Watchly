@@ -117,31 +117,45 @@
       </div>
       <p class="review-comment">{{ r.comment }}</p>
 
-      <div class="review-footer-actions">
-        
-        <div v-if="auth.isLoggedIn && auth.user?.id === r.user_id" class="review-my-actions">
-          <button class="btn-action-edit" @click="habilitarEdicion(r)">✏️ Editar</button>
-          <button class="btn-action-delete" @click="handleDeleteReview(r.id)">🗑️ Eliminar</button>
-        </div>
+    <div class="review-footer-actions">
+  
+  <!-- Contadores visibles para TODOS incluyendo el dueño -->
+  <div class="review-counters-readonly">
+    <span class="rx-counter">🤝 Concuerdo <span class="rx-badge">{{ r.agree_count || 0 }}</span></span>
+    <span class="rx-counter">👎 Desacuerdo <span class="rx-badge">{{ r.disagree_count || 0 }}</span></span>
+  </div>
 
-        <div v-else class="review-public-reactions">
-          <button 
-            class="rx-btn agree" 
-            :class="{ active: r.user_voted === 'agree' }" 
-            @click="handleReactReview(r, 'agree')"
-          >
-            🤝 Concuerdo <span class="rx-badge">{{ r.agree_count || 0 }}</span>
-          </button>
-          <button 
-            class="rx-btn disagree" 
-            :class="{ active: r.user_voted === 'disagree' }" 
-            @click="handleReactReview(r, 'disagree')"
-          >
-            👎 Desacuerdo <span class="rx-badge">{{ r.disagree_count || 0 }}</span>
-          </button>
-        </div>
+  <!-- Botones de acción solo para el dueño -->
+  <div v-if="auth.isLoggedIn && auth.user?.id === r.user_id" class="review-my-actions">
+    <button class="btn-action-edit" @click="habilitarEdicion(r)">✏️ Editar</button>
+    <button class="btn-action-delete" @click="handleDeleteReview(r.id)">🗑️ Eliminar</button>
+  </div>
 
-      </div>
+  <!-- Botones de voto para los demás -->
+  <div v-else-if="auth.isLoggedIn" class="review-public-reactions">
+    <button 
+      class="rx-btn agree" 
+      :class="{ active: r.user_voted === 'agree' }" 
+      @click="handleReactReview(r, 'agree')"
+    >
+      🤝 Concuerdo <span class="rx-badge">{{ r.agree_count || 0 }}</span>
+    </button>
+    <button 
+      class="rx-btn disagree" 
+      :class="{ active: r.user_voted === 'disagree' }" 
+      @click="handleReactReview(r, 'disagree')"
+    >
+      👎 Desacuerdo <span class="rx-badge">{{ r.disagree_count || 0 }}</span>
+    </button>
+  </div>
+
+  <!-- Sin sesión: solo muestra contadores -->
+  <div v-else class="review-counters-readonly">
+    <span class="rx-counter">🤝 <span class="rx-badge">{{ r.agree_count || 0 }}</span></span>
+    <span class="rx-counter">👎 <span class="rx-badge">{{ r.disagree_count || 0 }}</span></span>
+  </div>
+
+</div>
     </template>
 
     <template v-else>
@@ -375,35 +389,38 @@ async function handleReactReview(review, type) {
   if (index === -1) return
 
   const r = reviews.value[index]
-  const estadoAnterior = { ...r }
+  const snapshot = { ...r }
 
   try {
     const res = await api.reactToReview(review.id, type)
 
+    let nuevo = { ...r }
+
     if (res.action === 'added') {
-      reviews.value[index] = {
-        ...r,
-        agree_count: type === 'agree' ? r.agree_count + 1 : r.agree_count,
-        disagree_count: type === 'disagree' ? r.disagree_count + 1 : r.disagree_count,
-        user_voted: type
-      }
+      nuevo.user_voted = type
+      if (type === 'agree') nuevo.agree_count = (r.agree_count || 0) + 1
+      else nuevo.disagree_count = (r.disagree_count || 0) + 1
+
     } else if (res.action === 'removed') {
-      reviews.value[index] = {
-        ...r,
-        agree_count: type === 'agree' ? Math.max(0, r.agree_count - 1) : r.agree_count,
-        disagree_count: type === 'disagree' ? Math.max(0, r.disagree_count - 1) : r.disagree_count,
-        user_voted: null
-      }
+      nuevo.user_voted = null
+      if (type === 'agree') nuevo.agree_count = Math.max(0, (r.agree_count || 0) - 1)
+      else nuevo.disagree_count = Math.max(0, (r.disagree_count || 0) - 1)
+
     } else if (res.action === 'changed') {
-      reviews.value[index] = {
-        ...r,
-        agree_count: type === 'agree' ? r.agree_count + 1 : Math.max(0, r.agree_count - 1),
-        disagree_count: type === 'disagree' ? r.disagree_count + 1 : Math.max(0, r.disagree_count - 1),
-        user_voted: type
+      nuevo.user_voted = type
+      if (type === 'agree') {
+        nuevo.agree_count = (r.agree_count || 0) + 1
+        nuevo.disagree_count = Math.max(0, (r.disagree_count || 0) - 1)
+      } else {
+        nuevo.disagree_count = (r.disagree_count || 0) + 1
+        nuevo.agree_count = Math.max(0, (r.agree_count || 0) - 1)
       }
     }
+
+    reviews.value[index] = nuevo
+
   } catch (err) {
-    reviews.value[index] = estadoAnterior
+    reviews.value[index] = snapshot
     toast.show(err.message || 'No se pudo registrar tu reacción', 'error')
   }
 }
@@ -626,5 +643,27 @@ async function toggleFav() {
   display: flex; gap: 8px; justify-content: flex-end;
   .btn-save { padding: 5px 12px; font-size: 12px; max-width: 100px; }
   .btn-cancel { padding: 5px 12px; font-size: 12px; max-width: 100px; background: transparent; border: 1px solid $border; color: $text2; }
+}
+.review-counters-readonly {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  justify-content: flex-end;
+
+  .rx-counter {
+    font-size: 11px;
+    color: $text3;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+
+    .rx-badge {
+      background: $bg4;
+      color: $text2;
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-size: 10px;
+    }
+  }
 }
 </style>
