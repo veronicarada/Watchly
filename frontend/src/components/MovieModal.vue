@@ -118,42 +118,48 @@
       <p class="review-comment">{{ r.comment }}</p>
 
     <div class="review-footer-actions">
-  
-  <!-- Contadores visibles para TODOS incluyendo el dueño -->
-  <div class="review-counters-readonly">
-    <span class="rx-counter">🤝 Concuerdo <span class="rx-badge">{{ r.agree_count || 0 }}</span></span>
-    <span class="rx-counter">👎 Desacuerdo <span class="rx-badge">{{ r.disagree_count || 0 }}</span></span>
-  </div>
 
-  <!-- Botones de acción solo para el dueño -->
-  <div v-if="auth.isLoggedIn && auth.user?.id === r.user_id" class="review-my-actions">
-    <button class="btn-action-edit" @click="habilitarEdicion(r)">✏️ Editar</button>
-    <button class="btn-action-delete" @click="handleDeleteReview(r.id)">🗑️ Eliminar</button>
-  </div>
+  <!-- Si es mi reseña: veo contadores + editar/eliminar -->
+  <template v-if="auth.isLoggedIn && auth.user?.id === r.user_id">
+    <div class="review-reactions-row">
+      <span class="rx-readonly" :class="{ active: r.agree_count > 0 }">
+        🤝 Concuerdo <span class="rx-badge">{{ r.agree_count || 0 }}</span>
+      </span>
+      <span class="rx-readonly" :class="{ active: r.disagree_count > 0 }">
+        👎 Desacuerdo <span class="rx-badge">{{ r.disagree_count || 0 }}</span>
+      </span>
+      <button class="btn-action-edit" @click="habilitarEdicion(r)">✏️ Editar</button>
+      <button class="btn-action-delete" @click="handleDeleteReview(r.id)">🗑️ Eliminar</button>
+    </div>
+  </template>
 
-  <!-- Botones de voto para los demás -->
-  <div v-else-if="auth.isLoggedIn" class="review-public-reactions">
-    <button 
-      class="rx-btn agree" 
-      :class="{ active: r.user_voted === 'agree' }" 
-      @click="handleReactReview(r, 'agree')"
-    >
-      🤝 Concuerdo <span class="rx-badge">{{ r.agree_count || 0 }}</span>
-    </button>
-    <button 
-      class="rx-btn disagree" 
-      :class="{ active: r.user_voted === 'disagree' }" 
-      @click="handleReactReview(r, 'disagree')"
-    >
-      👎 Desacuerdo <span class="rx-badge">{{ r.disagree_count || 0 }}</span>
-    </button>
-  </div>
+  <!-- Si es reseña de otro usuario logueado: botones clicables -->
+  <template v-else-if="auth.isLoggedIn">
+    <div class="review-reactions-row">
+      <button 
+        class="rx-btn agree" 
+        :class="{ active: r.user_voted === 'agree' }" 
+        @click="handleReactReview(r, 'agree')"
+      >
+        🤝 Concuerdo <span class="rx-badge">{{ r.agree_count || 0 }}</span>
+      </button>
+      <button 
+        class="rx-btn disagree" 
+        :class="{ active: r.user_voted === 'disagree' }" 
+        @click="handleReactReview(r, 'disagree')"
+      >
+        👎 Desacuerdo <span class="rx-badge">{{ r.disagree_count || 0 }}</span>
+      </button>
+    </div>
+  </template>
 
-  <!-- Sin sesión: solo muestra contadores -->
-  <div v-else class="review-counters-readonly">
-    <span class="rx-counter">🤝 <span class="rx-badge">{{ r.agree_count || 0 }}</span></span>
-    <span class="rx-counter">👎 <span class="rx-badge">{{ r.disagree_count || 0 }}</span></span>
-  </div>
+  <!-- Sin sesión: solo contadores -->
+  <template v-else>
+    <div class="review-reactions-row">
+      <span class="rx-readonly">🤝 <span class="rx-badge">{{ r.agree_count || 0 }}</span></span>
+      <span class="rx-readonly">👎 <span class="rx-badge">{{ r.disagree_count || 0 }}</span></span>
+    </div>
+  </template>
 
 </div>
     </template>
@@ -575,68 +581,6 @@ async function toggleFav() {
   .btn-save { padding: 6px 12px; font-size: 12px; max-width: 140px; }
   .btn-cancel { padding: 6px 12px; font-size: 12px; max-width: 100px; background: transparent; border: 1px solid $border; color: $text2; }
 }
-.review-footer-actions {
-  margin-top: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.review-public-reactions {
-  display: flex;
-  gap: 10px;
-
-  .rx-btn {
-    background: $bg2;
-    border: 1px solid $border;
-    color: $text2;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 11px;
-    cursor: pointer;
-    font-family: $font-body;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: all $transition;
-
-    &:hover {
-      border-color: $text3;
-      color: $text;
-    }
-
-    &.active {
-      background: rgba($gold, 0.15);
-      border-color: $gold;
-      color: $gold;
-      font-weight: 600;
-      
-      .rx-badge {
-        background: $gold;
-        color: $bg;
-      }
-    }
-  }
-
-  .rx-badge {
-    background: $bg4;
-    color: $text2;
-    padding: 1px 6px;
-    border-radius: 10px;
-    font-size: 10px;
-  }
-}
-
-.review-my-actions {
-  display: flex;
-  gap: 12px;
-  button {
-    background: none; border: none; font-size: 12px; cursor: pointer; font-family: $font-body;
-    &:hover { opacity: 0.7; }
-  }
-  .btn-action-edit { color: $gold; }
-  .btn-action-delete { color: $red; }
-}
 
 .review-form-edit { display: flex; flex-direction: column; gap: 10px; }
 .edit-buttons-row {
@@ -644,11 +588,6 @@ async function toggleFav() {
   .btn-save { padding: 5px 12px; font-size: 12px; max-width: 100px; }
   .btn-cancel { padding: 5px 12px; font-size: 12px; max-width: 100px; background: transparent; border: 1px solid $border; color: $text2; }
 }
-.review-counters-readonly {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
-  justify-content: flex-end;
 
   .rx-counter {
     font-size: 11px;
@@ -656,14 +595,102 @@ async function toggleFav() {
     display: flex;
     align-items: center;
     gap: 5px;
+  }
+  .review-footer-actions {
+  margin-top: 10px;
+}
+
+.review-reactions-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.rx-btn {
+  background: $bg2;
+  border: 1px solid $border;
+  color: $text2;
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: $font-body;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all $transition;
+
+  &:hover {
+    border-color: $text3;
+    color: $text;
+  }
+
+  &.active {
+    background: rgba($gold, 0.15);
+    border-color: $gold;
+    color: $gold;
+    font-weight: 600;
 
     .rx-badge {
-      background: $bg4;
-      color: $text2;
-      padding: 1px 6px;
-      border-radius: 10px;
-      font-size: 10px;
+      background: $gold;
+      color: $bg;
     }
   }
 }
+
+.rx-readonly {
+  font-size: 12px;
+  color: $text3;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 20px;
+  border: 1px solid $border;
+  background: $bg2;
+
+  &.active {
+    color: $gold;
+    border-color: rgba($gold, 0.3);
+  }
+}
+
+.rx-badge {
+  background: $bg4;
+  color: $text2;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.btn-action-edit {
+  background: none;
+  border: none;
+  color: $gold;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: $font-body;
+  padding: 5px 8px;
+  border-radius: 20px;
+  border: 1px solid rgba($gold, 0.3);
+  transition: opacity 0.2s;
+  &:hover { opacity: 0.7; }
+}
+
+.btn-action-delete {
+  background: none;
+  border: 1px solid rgba($red, 0.3);
+  color: $red;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: $font-body;
+  padding: 5px 8px;
+  border-radius: 20px;
+  transition: opacity 0.2s;
+  &:hover { opacity: 0.7; }
+}
+
 </style>
