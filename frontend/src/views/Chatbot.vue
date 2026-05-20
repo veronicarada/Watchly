@@ -79,15 +79,11 @@ const messagesEl = ref(null)
 const inputFocused = ref(false)
 
 const chips = [
-  '🎬 Recomendar película',
-  '📺 Recomendar serie',
-  '🎥 Recomendar documental',
-  '😱 Película de terror',
-  '😂 Comedia',
-  '💕 Romance',
-  '🏆 Mejor puntuadas',
-  '🎭 Telenovela',
-  'Que pelicula o serie puedo ver hoy?🎬',
+  '⚡ Series cortas para maratonear',
+  '🍿 Una comedia para no pensar',
+  '⚡ Series cortas',
+  '👨‍👩‍👧‍👦 Una opción para ver en familia',
+  '🔥 Lo más visto',
 ]
 
 function sendChip(text) {
@@ -102,21 +98,13 @@ function clearChat() {
 
 function detectPreferences(text) {
   const lower = text.toLowerCase()
-  const genres = ['terror', 'comedia', 'romance', 'drama', 'acción', 'sci-fi', 'documental', 'animación', 'thriller', 'suspenso']
-  
+  const genres = ['terror', 'comedia', 'romance', 'drama', 'acción', 'sci-fi', 'documental', 'animación', 'thriller']
   genres.forEach(g => {
-    const dislikePatterns = [`no me gusta ${g}`, `odio ${g}`, `no me gustan ${g}`, `no me gusta el ${g}`, `no me gusta la ${g}`, `no me gustan las de ${g}`, `no quiero ${g}`, `evita ${g}`, `sin ${g}`]
-    const likePatterns = [`me gusta ${g}`, `amo ${g}`, `me encanta ${g}`, `me gustan ${g}`, `me gusta el ${g}`, `me gusta la ${g}`, `quiero ${g}`, `me interesan de ${g}`]
-    
-    if (dislikePatterns.some(p => lower.includes(p))) {
+    if (lower.includes(`no me gusta ${g}`) || lower.includes(`odio el ${g}`) || lower.includes(`no me gustan ${g}`)) {
       if (!preferences.value.dislikes.includes(g)) preferences.value.dislikes.push(g)
-      // Si estaba en likes, lo sacamos
-      preferences.value.likes = preferences.value.likes.filter(l => l !== g)
     }
-    if (likePatterns.some(p => lower.includes(p))) {
+    if (lower.includes(`me gusta ${g}`) || lower.includes(`amo el ${g}`) || lower.includes(`me encanta ${g}`)) {
       if (!preferences.value.likes.includes(g)) preferences.value.likes.push(g)
-      // Si estaba en dislikes, lo sacamos
-      preferences.value.dislikes = preferences.value.dislikes.filter(d => d !== g)
     }
   })
   localStorage.setItem('watchly-prefs', JSON.stringify(preferences.value))
