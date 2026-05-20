@@ -8,5 +8,7 @@ router.get('/:movieId', reviewsController.getReviews);
 
 // POST /api/reviews -> Solo usuarios autenticados
 router.post('/', authMiddleware, reviewsController.createReview);
-
+router.put('/:reviewId', authMiddleware, reviewsController.updateReview);
+// DELETE /api/reviews/:reviewId -> Solo el dueño elimina
+router.delete('/:reviewId', authMiddleware, reviewsController.deleteReview);
 module.exports = router;

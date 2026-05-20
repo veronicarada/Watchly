@@ -57,4 +57,6 @@ export const api = {
   // Reseñas
   getReviews: (movieId) => request(`/reviews/${movieId}`, 'GET'),
   createReview: (reviewData) => request('/reviews', 'POST', reviewData, true),
+  updateReview: (reviewId, reviewData) => request(`/reviews/${reviewId}`, 'PUT', reviewData, true),
+  deleteReview: (reviewId) => request(`/reviews/${reviewId}`, 'DELETE', null, true),
 }

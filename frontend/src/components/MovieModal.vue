@@ -107,15 +107,46 @@
                 <p v-else class="no-providers">
                   <button class="link-btn" @click="modal.openAuth('login')">Iniciá sesión</button> para dejar tu opinión
                 </p>
-                <div v-if="reviews.length" class="reviews-list">
-                  <div v-for="r in reviews" :key="r.id" class="review-item">
-                    <div class="review-header">
-                      <span class="review-user">{{ r.user_email?.split('@')[0] }}</span>
-                      <span class="review-stars">{{ '★'.repeat(r.rating) }}{{ '☆'.repeat(5 - r.rating) }}</span>
-                    </div>
-                    <p class="review-comment">{{ r.comment }}</p>
-                  </div>
-                </div>
+              <div v-if="reviews.length" class="reviews-list">
+  <div v-for="r in reviews" :key="r.id" class="review-item">
+    
+    <template v-if="reviewEditandoId !== r.id">
+      <div class="review-header">
+        <span class="review-user">{{ r.user_email?.split('@')[0] }}</span>
+        <span class="review-stars">{{ '★'.repeat(r.rating) }}{{ '☆'.repeat(5 - r.rating) }}</span>
+      </div>
+      <p class="review-comment">{{ r.comment }}</p>
+
+      <div v-if="auth.isLoggedIn && auth.user?.id === r.user_id" class="review-my-actions">
+        <button class="btn-action-edit" @click="habilitarEdicion(r)">✏️ Editar</button>
+        <button class="btn-action-delete" @click="handleDeleteReview(r.id)">🗑️ Eliminar</button>
+      </div>
+    </template>
+
+    <template v-else>
+      <div class="review-form-edit">
+        <div class="stars-input">
+          <button
+            v-for="n in 5" :key="n"
+            class="star-btn"
+            :class="{ active: n <= editRating }"
+            @click="editRating = n"
+          >★</button>
+        </div>
+        <textarea
+          v-model="editComment"
+          class="review-textarea"
+          rows="2"
+        ></textarea>
+        <div class="edit-buttons-row">
+          <button class="btn-primary btn-save" @click="handleUpdateReview(r.id)">Guardar cambios</button>
+          <button class="btn-secondary btn-cancel" @click="reviewEditandoId = null">Cancelar</button>
+        </div>
+      </div>
+    </template>
+
+  </div>
+</div>
                 <p v-else class="no-providers">Todavía no hay opiniones para esta película.</p>
               </div>
 
@@ -145,6 +176,10 @@ const reviews      = ref([])
 const comment      = ref('')
 const rating       = ref(5)
 const isSubmitting = ref(false)
+const reviewEditandoId = ref(null) 
+const editComment      = ref('')
+const editRating       = ref(5)
+
 
 const PLACEHOLDER = 'https://via.placeholder.com/200x300/1a1a2e/FFD700?text=NO'
 
@@ -234,7 +269,47 @@ async function handleSendReview() {
     isSubmitting.value = false
   }
 }
+// 🚀 NUEVA FUNCIÓN: Activa el modo edición cargando los datos viejos de la reseña
+function habilitarEdicion(review) {
+  reviewEditandoId.value = review.id
+  editComment.value = review.comment
+  editRating.value = review.rating
+}
 
+// 🚀 NUEVA FUNCIÓN: Guarda los cambios en el backend y actualiza la lista localmente
+async function handleUpdateReview(reviewId) {
+  if (!editComment.value.trim()) return
+  try {
+    const updatedReview = await api.updateReview(reviewId, {
+      rating: editRating.value,
+      comment: editComment.value
+    })
+    
+    // Actualizamos la reseña dentro de la lista reactiva en la pantalla
+    const index = reviews.value.findIndex(r => r.id === reviewId)
+    if (index !== -1) {
+      reviews.value[index] = updatedReview
+    }
+    
+    reviewEditandoId.value = null // Cierra el formulario de edición
+    toast.show('Opinión editada con éxito!', 'success')
+  } catch (err) {
+    toast.show(err.message, 'error')
+  }
+}
+
+// 🚀 NUEVA FUNCIÓN: Elimina la reseña del backend y de la pantalla al instante
+async function handleDeleteReview(reviewId) {
+  if (!confirm('¿Estás seguro de que querés eliminar tu opinión?')) return
+  try {
+    await api.deleteReview(reviewId)
+    // Filtramos la lista local para remover la reseña borrada sin recargar la página
+    reviews.value = reviews.value.filter(r => r.id !== reviewId)
+    toast.show('Opinión eliminada', 'info')
+  } catch (err) {
+    toast.show(err.message, 'error')
+  }
+}
 watch(() => modal.movieId, async (idWithType) => {
   if (!idWithType) { movie.value = null; reviews.value = []; return }
 
@@ -382,5 +457,38 @@ async function toggleFav() {
   .modal-body { flex-direction: column; }
   .modal-poster { width: 120px; margin-top: -60px; }
   .modal-title { font-size: 24px; }
+}
+.review-my-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  justify-content: flex-end;
+  
+  button {
+    background: none;
+    border: none;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: $font-body;
+    transition: opacity 0.2s;
+    &:hover { opacity: 0.7; }
+  }
+  .btn-action-edit { color: $gold; }
+  .btn-action-delete { color: $red; }
+}
+
+.review-form-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.edit-buttons-row {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  
+  .btn-save { padding: 6px 12px; font-size: 12px; max-width: 140px; }
+  .btn-cancel { padding: 6px 12px; font-size: 12px; max-width: 100px; background: transparent; border: 1px solid $border; color: $text2; }
 }
 </style>

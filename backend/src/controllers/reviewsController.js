@@ -54,3 +54,65 @@ exports.createReview = async (req, res) => {
         return res.status(400).json({ error: error.message });
     }
 };
+
+// Editar una reseña (SOLO EL DUEÑO)
+exports.updateReview = async (req, res) => {
+    const { reviewId } = req.params; // El ID de la reseña viene en la URL
+    const { rating, comment } = req.body;
+    const user_id = req.user?.id;
+
+    if (!user_id) {
+        return res.status(401).json({ error: 'No autorizado.' });
+    }
+
+    try {
+        // Hacemos el update filtrando por el ID de la reseña Y el ID del usuario
+        const { data, error } = await supabase
+            .from('reviews')
+            .update({ rating, comment })
+            .eq('id', reviewId)
+            .eq('user_id', user_id) // Bloqueo de seguridad backend
+            .select();
+
+        if (error) throw error;
+
+        // Si no arrojó error pero data está vacío, significa que la reseña no existía o no era del usuario
+        if (data.length === 0) {
+            return res.status(403).json({ error: 'No tienes permiso para editar esta reseña o no existe.' });
+        }
+
+        return res.json(data[0]);
+    } catch (error) {
+        return res.status(400).json({ error: error.message });
+    }
+};
+
+// Eliminar una reseña (SOLO EL DUEÑO)
+exports.deleteReview = async (req, res) => {
+    const { reviewId } = req.params;
+    const user_id = req.user?.id;
+
+    if (!user_id) {
+        return res.status(401).json({ error: 'No autorizado.' });
+    }
+
+    try {
+        // Borramos filtrando obligatoriamente por el ID de la reseña Y el ID del usuario
+        const { data, error, status } = await supabase
+            .from('reviews')
+            .delete()
+            .eq('id', reviewId)
+            .eq('user_id', user_id)
+            .select();
+
+        if (error) throw error;
+
+        if (data.length === 0) {
+            return res.status(403).json({ error: 'No tienes permiso para eliminar esta reseña o no existe.' });
+        }
+
+        return res.json({ message: 'Reseña eliminada correctamente.' });
+    } catch (error) {
+        return res.status(400).json({ error: error.message });
+    }
+};
