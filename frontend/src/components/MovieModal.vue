@@ -107,7 +107,7 @@
                 <p v-else class="no-providers">
                   <button class="link-btn" @click="modal.openAuth('login')">Iniciá sesión</button> para dejar tu opinión
                 </p>
-              <div v-if="reviews.length" class="reviews-list">
+             <div v-if="reviews.length" class="reviews-list">
   <div v-for="r in reviews" :key="r.id" class="review-item">
     
     <template v-if="reviewEditandoId !== r.id">
@@ -117,9 +117,30 @@
       </div>
       <p class="review-comment">{{ r.comment }}</p>
 
-      <div v-if="auth.isLoggedIn && auth.user?.id === r.user_id" class="review-my-actions">
-        <button class="btn-action-edit" @click="habilitarEdicion(r)">✏️ Editar</button>
-        <button class="btn-action-delete" @click="handleDeleteReview(r.id)">🗑️ Eliminar</button>
+      <div class="review-footer-actions">
+        
+        <div v-if="auth.isLoggedIn && auth.user?.id === r.user_id" class="review-my-actions">
+          <button class="btn-action-edit" @click="habilitarEdicion(r)">✏️ Editar</button>
+          <button class="btn-action-delete" @click="handleDeleteReview(r.id)">🗑️ Eliminar</button>
+        </div>
+
+        <div v-else class="review-public-reactions">
+          <button 
+            class="rx-btn agree" 
+            :class="{ active: r.user_voted === 'agree' }" 
+            @click="handleReactReview(r, 'agree')"
+          >
+            🤝 Concuerdo <span class="rx-badge">{{ r.agree_count || 0 }}</span>
+          </button>
+          <button 
+            class="rx-btn disagree" 
+            :class="{ active: r.user_voted === 'disagree' }" 
+            @click="handleReactReview(r, 'disagree')"
+          >
+            👎 Desacuerdo <span class="rx-badge">{{ r.disagree_count || 0 }}</span>
+          </button>
+        </div>
+
       </div>
     </template>
 
@@ -133,13 +154,9 @@
             @click="editRating = n"
           >★</button>
         </div>
-        <textarea
-          v-model="editComment"
-          class="review-textarea"
-          rows="2"
-        ></textarea>
+        <textarea v-model="editComment" class="review-textarea" rows="2"></textarea>
         <div class="edit-buttons-row">
-          <button class="btn-primary btn-save" @click="handleUpdateReview(r.id)">Guardar cambios</button>
+          <button class="btn-primary btn-save" @click="handleUpdateReview(r.id)">Guardar</button>
           <button class="btn-secondary btn-cancel" @click="reviewEditandoId = null">Cancelar</button>
         </div>
       </div>
@@ -244,7 +261,15 @@ function shortName(id, fallback) {
 
 async function fetchReviews(movieId) {
   try {
-    reviews.value = await api.getReviews(movieId)
+    const data = await api.getReviews(movieId)
+    
+    // Mapeamos las reseñas asegurando que todas tengan estructura reactiva limpia en Vue
+    reviews.value = data.map(r => ({
+      ...r,
+      agree_count: r.agree_count || 0,
+      disagree_count: r.disagree_count || 0,
+      user_voted: r.user_voted || null
+    }))
   } catch (err) {
     console.error('Error al traer las opiniones:', err)
   }
@@ -339,7 +364,49 @@ watch(() => modal.movieId, async (idWithType) => {
   }
   loading.value = false
 })
+async function handleReactReview(review, type) {
+  if (!auth.isLoggedIn) {
+    modal.openAuth('login')
+    toast.show('Iniciá sesión para reaccionar', 'info')
+    return
+  }
 
+  const index = reviews.value.findIndex(r => r.id === review.id)
+  if (index === -1) return
+
+  const r = reviews.value[index]
+  const estadoAnterior = { ...r }
+
+  try {
+    const res = await api.reactToReview(review.id, type)
+
+    if (res.action === 'added') {
+      reviews.value[index] = {
+        ...r,
+        agree_count: type === 'agree' ? r.agree_count + 1 : r.agree_count,
+        disagree_count: type === 'disagree' ? r.disagree_count + 1 : r.disagree_count,
+        user_voted: type
+      }
+    } else if (res.action === 'removed') {
+      reviews.value[index] = {
+        ...r,
+        agree_count: type === 'agree' ? Math.max(0, r.agree_count - 1) : r.agree_count,
+        disagree_count: type === 'disagree' ? Math.max(0, r.disagree_count - 1) : r.disagree_count,
+        user_voted: null
+      }
+    } else if (res.action === 'changed') {
+      reviews.value[index] = {
+        ...r,
+        agree_count: type === 'agree' ? r.agree_count + 1 : Math.max(0, r.agree_count - 1),
+        disagree_count: type === 'disagree' ? r.disagree_count + 1 : Math.max(0, r.disagree_count - 1),
+        user_voted: type
+      }
+    }
+  } catch (err) {
+    reviews.value[index] = estadoAnterior
+    toast.show(err.message || 'No se pudo registrar tu reacción', 'error')
+  }
+}
 async function toggleFav() {
   if (!auth.isLoggedIn) {
     modal.openAuth('login')
@@ -490,5 +557,74 @@ async function toggleFav() {
   
   .btn-save { padding: 6px 12px; font-size: 12px; max-width: 140px; }
   .btn-cancel { padding: 6px 12px; font-size: 12px; max-width: 100px; background: transparent; border: 1px solid $border; color: $text2; }
+}
+.review-footer-actions {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.review-public-reactions {
+  display: flex;
+  gap: 10px;
+
+  .rx-btn {
+    background: $bg2;
+    border: 1px solid $border;
+    color: $text2;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: $font-body;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all $transition;
+
+    &:hover {
+      border-color: $text3;
+      color: $text;
+    }
+
+    &.active {
+      background: rgba($gold, 0.15);
+      border-color: $gold;
+      color: $gold;
+      font-weight: 600;
+      
+      .rx-badge {
+        background: $gold;
+        color: $bg;
+      }
+    }
+  }
+
+  .rx-badge {
+    background: $bg4;
+    color: $text2;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-size: 10px;
+  }
+}
+
+.review-my-actions {
+  display: flex;
+  gap: 12px;
+  button {
+    background: none; border: none; font-size: 12px; cursor: pointer; font-family: $font-body;
+    &:hover { opacity: 0.7; }
+  }
+  .btn-action-edit { color: $gold; }
+  .btn-action-delete { color: $red; }
+}
+
+.review-form-edit { display: flex; flex-direction: column; gap: 10px; }
+.edit-buttons-row {
+  display: flex; gap: 8px; justify-content: flex-end;
+  .btn-save { padding: 5px 12px; font-size: 12px; max-width: 100px; }
+  .btn-cancel { padding: 5px 12px; font-size: 12px; max-width: 100px; background: transparent; border: 1px solid $border; color: $text2; }
 }
 </style>

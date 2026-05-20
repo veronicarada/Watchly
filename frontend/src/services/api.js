@@ -55,8 +55,9 @@ export const api = {
   resolveTieBreaker: (code) => request(`/groups/${code}/tiebreaker`, 'POST', {}, true),
 
   // Reseñas
-  getReviews: (movieId) => request(`/reviews/${movieId}`, 'GET'),
+  getReviews: (movieId) => request(`/reviews/${movieId}`, 'GET', null, true),
   createReview: (reviewData) => request('/reviews', 'POST', reviewData, true),
   updateReview: (reviewId, reviewData) => request(`/reviews/${reviewId}`, 'PUT', reviewData, true),
   deleteReview: (reviewId) => request(`/reviews/${reviewId}`, 'DELETE', null, true),
+  reactToReview: (reviewId, type) => request(`/reviews/${reviewId}/react`, 'POST', { type }, true),
 }
