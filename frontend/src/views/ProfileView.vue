@@ -15,7 +15,11 @@
           >{{ a }}</button>
         </div>
       </div>
-      <button class="btn-save-avatar" @click="saveAvatar">Guardar avatar</button>
+
+      <div class="avatar-actions">
+   <button class="btn-save-avatar" @click="saveAvatar">Guardar avatar</button>
+     <button class="btn-back" @click="router.push('/')">← Volver al inicio</button>
+   </div>
 
       <!-- Info -->
       <div class="profile-info">
@@ -53,7 +57,8 @@ import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 import { api } from '@/services/api'
-
+import { useRouter } from 'vue-router'
+const router = useRouter()
 const auth = useAuthStore()
 const toast = useToastStore()
 
@@ -178,4 +183,16 @@ input {
 }
 .stat-number { font-size: 28px; font-weight: 700; color: $gold; }
 .stat-label { font-size: 12px; color: $text2; }
+
+.avatar-actions {
+  display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+}
+
+.btn-back {
+  padding: 8px 20px; border-radius: $radius-sm;
+  background: transparent; border: 1px solid $border;
+  color: $text2; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all $transition;
+  &:hover { border-color: $gold; color: $text; }
+}
 </style>
