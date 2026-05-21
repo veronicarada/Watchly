@@ -30,6 +30,35 @@
       <button class="btn-primary" @click="applyFilters">FILTRAR</button>
     </div>
 
+    <!-- FILTRO DE PLATAFORMAS -->
+    <div class="platforms-section">
+      <label class="platforms-label">PLATAFORMAS</label>
+      <div class="platforms-row">
+        <button
+          v-for="p in platforms"
+          :key="p.id"
+          class="platform-chip"
+          :class="{ active: selectedProviders.includes(p.id) }"
+          @click="toggleProvider(p.id)"
+          :title="p.name"
+        >
+          <img
+            :src="`https://image.tmdb.org/t/p/original${p.logo}`"
+            :alt="p.name"
+            class="platform-logo"
+          />
+          <span class="platform-name">{{ p.name }}</span>
+        </button>
+      </div>
+      <button
+        v-if="selectedProviders.length"
+        class="clear-providers"
+        @click="selectedProviders = []"
+      >
+        ✕ Limpiar selección ({{ selectedProviders.length }})
+      </button>
+    </div>
+
     <p v-if="resultCount" class="result-count">{{ resultCount }}</p>
 
     <div v-if="loading" class="loading-dots">
@@ -49,22 +78,38 @@ import { useRoute } from 'vue-router'
 import MovieCard from '@/components/MovieCard.vue'
 import { api } from '@/services/api'
 
-const route       = useRoute()
-const movies      = ref([])
-const genres      = ref([])
-const loading     = ref(false)
-const error       = ref(null)
-const searched    = ref(false)
-const resultCount = ref('')
-const filters     = ref({ genre: '', year: '', rating: '' })
+const route            = useRoute()
+const movies           = ref([])
+const genres           = ref([])
+const loading          = ref(false)
+const error            = ref(null)
+const searched         = ref(false)
+const resultCount      = ref('')
+const filters          = ref({ genre: '', year: '', rating: '' })
+const selectedProviders = ref([])
 
-// Años dinámicos desde el año actual hasta 2000
+const platforms = [
+  { id: 8,    name: 'Netflix',     logo: '/t/p/original/t2yyOv40HZeVlLjYsCsPHnWLk4W.jpg' },
+  { id: 9,    name: 'Prime',       logo: '/t/p/original/dQeAar5H991VYporEjUspolDarG.jpg' },
+  { id: 337,  name: 'Disney+',     logo: '/t/p/original/7rwgEs15tFwyR9NPQ5vpzxTj19d.jpg' },
+  { id: 1899, name: 'Max',         logo: '/t/p/original/Ajqyt5oPwPVVBATFe1PN0oemfMH.jpg' },
+  { id: 350,  name: 'Apple TV+',   logo: '/t/p/original/6uhKBfmtzFqOcLousHwZuzcrScK.jpg' },
+  { id: 531,  name: 'Paramount+',  logo: '/t/p/original/xbhHHa1YgtpwhC8lb1NQ3ACVcLd.jpg' },
+  { id: 283,  name: 'Crunchyroll', logo: '/t/p/original/8Gt1iClBlzTeQs8WQm8UrCoIXnQ.jpg' },
+  { id: 11,   name: 'MUBI',        logo: '/t/p/original/bVR4Z1LCHY7gidXAJF5pMa4QaDS.jpg' },
+  { id: 300,  name: 'Pluto TV',    logo: '/t/p/original/rinJD77VwQHmHPlM9kqnGBGCbKB.jpg' },
+]
+
+function toggleProvider(id) {
+  const idx = selectedProviders.value.indexOf(id)
+  if (idx === -1) selectedProviders.value.push(id)
+  else selectedProviders.value.splice(idx, 1)
+}
+
 const currentYear = new Date().getFullYear()
 const years = computed(() => {
   const result = []
-  for (let y = currentYear; y >= 2000; y--) {
-    result.push(y)
-  }
+  for (let y = currentYear; y >= 2000; y--) result.push(y)
   return result
 })
 
@@ -74,9 +119,10 @@ async function applyFilters() {
   searched.value = true
   try {
     const params = {}
-    if (filters.value.genre)  params.genre  = filters.value.genre
-    if (filters.value.year)   params.year   = filters.value.year
-    if (filters.value.rating) params.rating = filters.value.rating
+    if (filters.value.genre)           params.genre     = filters.value.genre
+    if (filters.value.year)            params.year      = filters.value.year
+    if (filters.value.rating)          params.rating    = filters.value.rating
+    if (selectedProviders.value.length) params.providers = selectedProviders.value.join('|')
     const data = await api.discover(params)
     movies.value = data.results
     resultCount.value = (data.total_results?.toLocaleString() || data.results.length) + ' resultados'
@@ -118,8 +164,9 @@ watch(() => route.query.q, q => { if (q) searchByQuery(q) })
 
 <style lang="scss" scoped>
 @use '@/assets/variables' as *;
+
 .filters-row {
-  display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 28px; align-items: flex-end;
+  display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; align-items: flex-end;
 }
 .filter-group {
   display: flex; flex-direction: column; gap: 4px;
@@ -131,5 +178,42 @@ watch(() => route.query.q, q => { if (q) searchByQuery(q) })
   font-family: $font-body; outline: none; cursor: pointer; min-width: 150px;
   &:focus { border-color: $gold; }
 }
+
+/* Plataformas */
+.platforms-section {
+  margin-bottom: 24px;
+}
+.platforms-label {
+  display: block; font-size: 11px; letter-spacing: 1px;
+  color: $text3; text-transform: uppercase; margin-bottom: 10px;
+}
+.platforms-row {
+  display: flex; flex-wrap: wrap; gap: 10px;
+}
+.platform-chip {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 14px 6px 8px;
+  background: $bg3; border: 1px solid $border; border-radius: 30px;
+  cursor: pointer; transition: all $transition;
+  &:hover { border-color: $text3; }
+  &.active {
+    border-color: $gold;
+    background: rgba($gold, 0.1);
+    .platform-name { color: $gold; }
+  }
+}
+.platform-logo {
+  width: 24px; height: 24px; border-radius: 6px; object-fit: cover;
+}
+.platform-name {
+  font-size: 12px; color: $text2; font-weight: 600; white-space: nowrap;
+}
+.clear-providers {
+  margin-top: 10px; background: none; border: none;
+  color: $text3; font-size: 12px; cursor: pointer;
+  font-family: $font-body;
+  &:hover { color: $red; }
+}
+
 .result-count { font-size: 13px; color: $text3; margin-bottom: 20px; }
 </style>

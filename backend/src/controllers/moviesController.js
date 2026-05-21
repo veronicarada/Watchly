@@ -133,16 +133,22 @@ const getMovieDetail = async (req, res) => {
 const discoverMovies = async (req, res) => {
   const { genre, year, rating, page = 1, sort = 'popularity.desc' } = req.query;
 
-  const params = {
-    page,
-    sort_by: sort,
-    include_adult: false,
-    'vote_count.gte': 50
-  };
+ const { genre, year, rating, page = 1, sort = 'popularity.desc', providers } = req.query;
 
-  if (genre)  params.with_genres          = String(genre);
-  if (year)   params.primary_release_year = year;
-  if (rating) params['vote_average.gte']  = rating;
+const params = {
+  page,
+  sort_by: sort,
+  include_adult: false,
+  'vote_count.gte': 50
+};
+
+if (genre)     params.with_genres          = String(genre);
+if (year)      params.primary_release_year = year;
+if (rating)    params['vote_average.gte']  = rating;
+if (providers) {
+  params.with_watch_providers = providers;  // ej: "8|9|337"
+  params.watch_region         = 'AR';
+}
 
   try {
     const tvParams = { ...params, 'vote_count.gte': 20 };
