@@ -148,6 +148,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useModalStore } from '@/stores/modal'
 import { useToastStore } from '@/stores/toast'
@@ -159,6 +160,20 @@ const toast = useToastStore()
 
 const currentGroup = ref(null)
 const joinCode = ref('')
+const route = useRoute()
+
+// Si vienen por link de invitación, unirse automáticamente
+onMounted(async () => {
+  const codeFromUrl = route.params.code
+  if (codeFromUrl && auth.isLoggedIn) {
+    joinCode.value = codeFromUrl
+    await joinRoom()
+  } else if (codeFromUrl && !auth.isLoggedIn) {
+    // Guarda el código y pide login
+    localStorage.setItem('watchly_pending_join', codeFromUrl)
+    modal.openAuth('login')
+  }
+})
 const voteMovie = ref(null)
 const polling = ref(null)
 

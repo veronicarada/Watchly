@@ -8,12 +8,14 @@ import Group     from '@/views/Group.vue'
 import ResetPassword from '@/views/ResetPasswordView.vue'
 import Profile from '@/views/ProfileView.vue'
 
+
 const routes = [
   { path: '/',          name: 'Home',      component: Home },
   { path: '/explorar',  name: 'Explore',   component: Explore },
   { path: '/sorpresa',  name: 'Random',    component: Random },
   { path: '/favoritas', name: 'Favorites', component: Favorites, meta: { requiresAuth: true } },
   { path: '/grupo',     name: 'Group',     component: Group,     meta: { requiresAuth: true } },
+  { path: '/join/:code', name: 'JoinGroup', component: Group,    meta: { requiresAuth: true } },
   { path: '/reset-password', name: 'ResetPassword', component: ResetPassword },
   { path: '/perfil',    name: 'Profile',   component: Profile,   meta: { requiresAuth: true } },
 ]
