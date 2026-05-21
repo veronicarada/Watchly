@@ -191,16 +191,17 @@ const resetPassword = async (req, res) => {
   }
 };
 // PUT /api/auth/profile
+// PUT /api/auth/profile
 const updateProfile = async (req, res) => {
-  const { username } = req.body;
+  const { username, ciudad } = req.body;
   if (!username) return res.status(400).json({ error: 'Username requerido' });
 
   try {
     const { data, error } = await supabase
       .from('users')
-      .update({ username })
+      .update({ username, ciudad })
       .eq('id', req.user.id)
-      .select('id, username, email')
+      .select('id, username, email, ciudad')
       .single();
 
     if (error) throw error;

@@ -39,6 +39,7 @@
           <input :value="auth.user.email" disabled/>
         </div>
 
+
         <!-- Stats -->
         <div class="stats">
           <div class="stat">
@@ -95,6 +96,7 @@ async function saveUsername() {
     saving.value = false
   }
 }
+
 </script>
 
 <style lang="scss" scoped>

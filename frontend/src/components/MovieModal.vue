@@ -94,10 +94,15 @@
                 <button class="btn-watched" :class="{ active: isWatched }" @click="toggleWatched">
                  {{ isWatched ? '✅ Vista' : '👁 Marcar como vista' }}
                 </button>
-                <a :href="'https://www.google.com/search?q=' + encodeURIComponent(movie.title) + '+cines+Buenos+Aires'"
-                  target="_blank"
-                  class="btn-secondary"
-                >Ver en cines</a>
+              <button v-if="isInCines" class="btn-secondary" @click="showCinesPopup = true">📍 Ver en cines</button>
+               <div v-if="showCinesPopup" class="cines-popup">
+                <p>¿En qué ciudad querés ver la película?</p>
+                <input v-model="ciudadCines" type="text" placeholder="Ej: Pilar, Buenos Aires" class="cines-input"/>
+                <div class="cines-actions">
+                 <button class="btn-primary" @click="buscarCines">Buscar</button>
+                <button class="btn-secondary" @click="showCinesPopup = false">Cancelar</button>
+               </div>
+               </div>
               </div>
 
               <div class="modal-section reviews-section">
@@ -281,6 +286,7 @@ import { useToastStore } from '@/stores/toast'
 import { api } from '@/services/api'
 
 const modal = useModalStore()
+modal.loadNowPlaying()
 const auth  = useAuthStore()
 const toast = useToastStore()
 
@@ -295,6 +301,8 @@ const isSubmitting = ref(false)
 const reviewEditandoId = ref(null) 
 const editComment      = ref('')
 const editRating       = ref(5)
+const showCinesPopup = ref(false)
+const ciudadCines = ref('')
 const selectedActor  = ref(null)
 const actorLoading   = ref(false)
 const showBio        = ref(false)
@@ -361,6 +369,12 @@ const allProviders = computed(() => {
   add(movie.value.providers.rent, 'rent')
   add(movie.value.providers.buy, 'buy')
   return result
+})
+
+const isInCines = computed(() => {
+  if (!movie.value) return false
+  if (movie.value.media_type === 'tv') return false
+  return modal.nowPlayingIds.has(movie.value.id)
 })
 
 function providerUrl(id) {
@@ -578,6 +592,15 @@ async function toggleWatched() {
     toast.show(err.message, 'error')
   }
 }
+
+function buscarCines() {
+  if (!ciudadCines.value.trim()) return
+  const url = `https://www.google.com/search?q=${encodeURIComponent(movie.value.title)}+cines+${encodeURIComponent(ciudadCines.value)}`
+  window.open(url, '_blank')
+  showCinesPopup.value = false
+  ciudadCines.value = ''
+}
+
 </script>
 
 <style lang="scss" scoped>
@@ -933,5 +956,26 @@ async function toggleWatched() {
   color: $text3;
   margin: 0 0 4px;
   line-height: 1.5;
+}
+
+.cines-popup {
+  width: 100%; margin-top: 12px;
+  background: $bg3; border: 1px solid $border;
+  border-radius: $radius-sm; padding: 16px;
+  display: flex; flex-direction: column; gap: 10px;
+
+  p { font-size: 13px; color: $text2; margin: 0; }
+}
+
+.cines-input {
+  padding: 10px 14px; background: $bg2; border: 1px solid $border;
+  border-radius: $radius-sm; color: $text; font-size: 14px;
+  font-family: $font-body; outline: none; width: 100%;
+  &:focus { border-color: $gold; }
+}
+
+.cines-actions {
+  display: flex; gap: 8px;
+  button { flex: 1; }
 }
 </style>
