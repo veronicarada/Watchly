@@ -234,9 +234,21 @@ const getNowPlaying = async (req, res) => {
     ]);
 
     const knownFor = (credits.data.cast || [])
-      .filter(c => c.poster_path)
-      .sort((a, b) => b.popularity - a.popularity)
-      .slice(0, 8)
+  .filter(c => c.poster_path)
+  .reduce((acc, c) => {
+    if (!acc.find(x => x.id === c.id)) acc.push(c)  // sin repetidos
+    return acc
+  }, [])
+  .sort((a, b) => (b.vote_count || 0) - (a.vote_count || 0))  // por votos = más conocidas
+  .slice(0, 8)
+  .map(c => ({
+    id:          c.id,
+    media_type:  c.media_type,
+    title:       c.title || c.name,
+    poster_path: c.poster_path,
+    character:   c.character,
+    year:        (c.release_date || c.first_air_date || '').substring(0, 4)
+  }))
       .map(c => ({
         id:          c.id,
         media_type:  c.media_type,
