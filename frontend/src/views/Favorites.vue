@@ -9,7 +9,7 @@
 
     <div class="tabs">
       <button :class="['tab-btn', { active: activeTab === 'favorites' }]" @click="activeTab = 'favorites'">
-        ❤️ Favoritas
+        ❤️ Guardados
       </button>
       <button :class="['tab-btn', { active: activeTab === 'watched' }]" @click="activeTab = 'watched'">
         ✅ Ya vistas
