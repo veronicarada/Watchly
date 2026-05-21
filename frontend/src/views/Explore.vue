@@ -43,7 +43,7 @@
           :title="p.name"
         >
           <img
-            :src="`https://image.tmdb.org/t/p/original${p.logo}`"
+            :src="p.logo"
             :alt="p.name"
             class="platform-logo"
           />
@@ -88,17 +88,7 @@ const resultCount      = ref('')
 const filters          = ref({ genre: '', year: '', rating: '' })
 const selectedProviders = ref([])
 
-const platforms = [
-  { id: 8,    name: 'Netflix',     logo: '/t/p/original/t2yyOv40HZeVlLjYsCsPHnWLk4W.jpg' },
-  { id: 9,    name: 'Prime',       logo: '/t/p/original/dQeAar5H991VYporEjUspolDarG.jpg' },
-  { id: 337,  name: 'Disney+',     logo: '/t/p/original/7rwgEs15tFwyR9NPQ5vpzxTj19d.jpg' },
-  { id: 1899, name: 'Max',         logo: '/t/p/original/Ajqyt5oPwPVVBATFe1PN0oemfMH.jpg' },
-  { id: 350,  name: 'Apple TV+',   logo: '/t/p/original/6uhKBfmtzFqOcLousHwZuzcrScK.jpg' },
-  { id: 531,  name: 'Paramount+',  logo: '/t/p/original/xbhHHa1YgtpwhC8lb1NQ3ACVcLd.jpg' },
-  { id: 283,  name: 'Crunchyroll', logo: '/t/p/original/8Gt1iClBlzTeQs8WQm8UrCoIXnQ.jpg' },
-  { id: 11,   name: 'MUBI',        logo: '/t/p/original/bVR4Z1LCHY7gidXAJF5pMa4QaDS.jpg' },
-  { id: 300,  name: 'Pluto TV',    logo: '/t/p/original/rinJD77VwQHmHPlM9kqnGBGCbKB.jpg' },
-]
+const platforms = ref([])
 
 function toggleProvider(id) {
   const idx = selectedProviders.value.indexOf(id)
@@ -155,6 +145,13 @@ onMounted(async () => {
   } catch {
     genres.value = []
   }
+
+  try {
+    platforms.value = await api.providers()
+  } catch {
+    platforms.value = []
+  }
+
   if (route.query.q) searchByQuery(route.query.q)
   else applyFilters()
 })

@@ -269,11 +269,30 @@ const getNowPlaying = async (req, res) => {
     res.status(500).json({ error: 'Error al obtener perfil del actor' });
   }
 };
+const getProviders = async (req, res) => {
+  try {
+    const { data } = await tmdb.get('/watch/providers/movie', {
+      params: { watch_region: 'AR' }
+    })
+    const ids = [8, 9, 337, 1899, 350, 531, 283, 11, 300]
+    const providers = data.results
+      .filter(p => ids.includes(p.provider_id))
+      .map(p => ({
+        id:   p.provider_id,
+        name: p.provider_name,
+        logo: 'https://image.tmdb.org/t/p/w45' + p.logo_path
+      }))
+    res.json(providers)
+  } catch (err) {
+    res.status(500).json({ error: 'Error al obtener proveedores' })
+  }
+}
 module.exports = {
   searchMovies,
   getPopular,
   getMovieDetail,
   getPersonDetail,
+  getProviders,
   discoverMovies,
   getRandomMovie,
   getGenres,
