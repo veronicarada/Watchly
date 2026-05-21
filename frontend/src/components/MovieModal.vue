@@ -27,10 +27,14 @@
               <span v-if="movie.media_type === 'tv'" class="media-badge">📺 Serie</span>
               <p v-if="movie.tagline" class="modal-tagline">"{{ movie.tagline }}"</p>
               <div class="modal-meta">
-  <span class="rating-badge">
-    <img src="https://www.themoviedb.org/assets/2/v4/logos/v2/blue_short-8e7b30f73a4020692ccca9c88bafe5dcb20f75de08bd31975aa918e0c9cb90d0.svg" alt="TMDb" class="tmdb-logo" />
-    {{ movie.vote_average?.toFixed(1) }}
-  </span>
+<a href="https://www.themoviedb.org" target="_blank" class="rating-badge tmdb-rating" title="Puntuación de TMDb">
+  <img 
+    src="https://www.themoviedb.org/assets/2/v4/logos/v2/blue_square_2-d537fb228cf3ded904ef09b136fe3fec72548ebc1fea3fbbd1ad9e36364db38b.svg" 
+    alt="TMDb" 
+    class="tmdb-logo"
+  />
+  <span>★ {{ movie.vote_average?.toFixed(1) }}</span>
+</a>
                 <span>{{ year }}</span>
                 <span>{{ movie.runtime ? movie.runtime + ' min' : (movie.episode_run_time?.[0] ? movie.episode_run_time[0] + ' min/ep' : '—') }}</span>
               </div>
@@ -94,10 +98,10 @@
               </div>
 
               <div class="modal-section reviews-section">
-                <h4>OPINIONES</h4>
-                <div v-if="auth.isLoggedIn" class="review-form">
-<!-- DESPUÉS -->
-<div class="stars-input">
+              <h4>OPINIONES</h4>
+<div v-if="auth.isLoggedIn" class="review-form">
+  <p class="review-hint">¿Viste esta película? Contanos qué te pareció y elegí cuántas estrellas le das.</p>
+  <div class="stars-input">
   <button
     v-for="n in 5" :key="n"
     class="star-btn"
@@ -777,12 +781,19 @@ async function toggleFav() {
   transition: opacity 0.2s;
   &:hover { opacity: 0.7; }
 }
+.tmdb-rating {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  cursor: pointer;
+  &:hover { opacity: 0.85; }
+}
+
 .tmdb-logo {
-  height: 10px;
+  height: 16px;
   width: auto;
-  vertical-align: middle;
-  margin-right: 4px;
-  filter: brightness(0) saturate(100%) invert(72%) sepia(98%) saturate(400%) hue-rotate(3deg) brightness(103%) contrast(101%);
+  border-radius: 3px;
 }
 
 .cast-item.clickable {
@@ -877,4 +888,10 @@ async function toggleFav() {
 /* Transición */
 .actor-slide-enter-active, .actor-slide-leave-active { transition: opacity 0.2s ease; }
 .actor-slide-enter-from, .actor-slide-leave-to { opacity: 0; }
+.review-hint {
+  font-size: 12px;
+  color: $text3;
+  margin: 0 0 4px;
+  line-height: 1.5;
+}
 </style>
