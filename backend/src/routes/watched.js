@@ -1,0 +1,10 @@
+const express = require('express');
+const router = express.Router();
+const auth = require('../middleware/auth');
+const { getWatched, addWatched, removeWatched, checkWatched } = require('../controllers/watchedController');
+router.use(auth);
+router.get('/', getWatched);
+router.post('/', addWatched);
+router.delete('/:movieId', removeWatched);
+router.get('/check/:movieId', checkWatched);
+module.exports = router;
