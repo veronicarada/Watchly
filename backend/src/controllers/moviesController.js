@@ -131,8 +131,7 @@ const getMovieDetail = async (req, res) => {
 
 // GET /api/movies/discover
 const discoverMovies = async (req, res) => {
-  const { genre, year, rating, page = 1, sort = 'popularity.desc' } = req.query;
-
+  
  const { genre, year, rating, page = 1, sort = 'popularity.desc', providers } = req.query;
 
 const params = {
@@ -254,15 +253,7 @@ const getNowPlaying = async (req, res) => {
     poster_path: c.poster_path,
     character:   c.character,
     year:        (c.release_date || c.first_air_date || '').substring(0, 4)
-  }))
-      .map(c => ({
-        id:          c.id,
-        media_type:  c.media_type,
-        title:       c.title || c.name,
-        poster_path: c.poster_path,
-        character:   c.character,
-        year:        (c.release_date || c.first_air_date || '').substring(0, 4)
-      }));
+  }));
 
     res.json({
       id:              person.data.id,

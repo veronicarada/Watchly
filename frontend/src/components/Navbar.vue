@@ -9,7 +9,7 @@
       <RouterLink to="/"          class="nav-pill">Inicio</RouterLink>
       <RouterLink to="/explorar"  class="nav-pill">Explorar</RouterLink>
       <RouterLink to="/sorpresa"  class="nav-pill">Sorprendeme</RouterLink>
-      <RouterLink to="/favoritas" class="nav-pill">Favoritas</RouterLink>
+      <RouterLink to="/favoritas" class="nav-pill">Mi lista</RouterLink>
       <RouterLink to="/grupo"     class="nav-pill">Grupo</RouterLink>
     </div>
 

@@ -91,6 +91,9 @@
                 <button class="btn-primary" :class="{ active: isFav }" @click="toggleFav">
                   {{ isFav ? 'GUARDADA' : 'GUARDAR' }}
                 </button>
+                <button class="btn-watched" :class="{ active: isWatched }" @click="toggleWatched">
+                 {{ isWatched ? '✅ Vista' : '👁 Marcar como vista' }}
+                </button>
                 <a :href="'https://www.google.com/search?q=' + encodeURIComponent(movie.title) + '+cines+Buenos+Aires'"
                   target="_blank"
                   class="btn-secondary"
@@ -283,6 +286,7 @@ const toast = useToastStore()
 
 const movie        = ref(null)
 const loading      = ref(false)
+const isWatched    = ref(false)
 const isFav        = ref(false)
 const reviews      = ref([])
 const comment      = ref('')
@@ -469,6 +473,8 @@ watch(() => modal.movieId, async (idWithType) => {
     try {
       const result = await api.checkFavorite(id)
       isFav.value = result.isFavorite
+      const watched = await api.checkWatched(id)
+      isWatched.value = watched.isWatched
     } catch { }
   }
   loading.value = false
@@ -541,6 +547,32 @@ async function toggleFav() {
       })
       isFav.value = true
       toast.show('Guardada en favoritas!', 'success')
+    }
+  } catch (err) {
+    toast.show(err.message, 'error')
+  }
+}
+async function toggleWatched() {
+  if (!auth.isLoggedIn) {
+    modal.openAuth('login')
+    toast.show('Iniciá sesión para marcar como vista', 'info')
+    return
+  }
+  try {
+    if (isWatched.value) {
+      await api.removeWatched(movie.value.id)
+      isWatched.value = false
+      toast.show('Eliminada de vistas', 'info')
+    } else {
+      await api.addWatched({
+        movie_id:     movie.value.id,
+        title:        movie.value.title,
+        poster_path:  movie.value.poster_path,
+        release_year: parseInt(year.value) || null,
+        vote_average: movie.value.vote_average
+      })
+      isWatched.value = true
+      toast.show('Marcada como vista!', 'success')
     }
   } catch (err) {
     toast.show(err.message, 'error')
@@ -780,6 +812,14 @@ async function toggleFav() {
   border-radius: 20px;
   transition: opacity 0.2s;
   &:hover { opacity: 0.7; }
+}
+.btn-watched {
+  flex: 1; padding: 12px; border-radius: $radius;
+  border: 1px solid $border; background: transparent;
+  color: $text2; font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: $transition;
+  &.active { background: rgba(0,200,100,0.15); border-color: #00c864; color: #00c864; }
+  &:hover:not(.active) { border-color: $gold; color: $gold; }
 }
 .tmdb-rating {
   display: flex;
