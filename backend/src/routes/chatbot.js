@@ -18,7 +18,7 @@ router.post('/', async (req, res) => {
         'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'nvidia/nemotron-3-super-120b-a12b:free',
+        model: 'google/gemma-3-4b-it:free',
         messages: [
           {
             role: 'system',

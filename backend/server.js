@@ -36,7 +36,8 @@ app.use('/api/favorites', require('./src/routes/favorites'));
 app.use('/api/groups',    require('./src/routes/groups'));
 app.use('/api/chatbot',   require('./src/routes/chatbot'));
 app.use('/api/reviews', require('./src/routes/reviews'));
-  
+app.use('/api/watched', require('./src/routes/watched'));
+
 // ─── Health check ────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: '🎬 Watchly API is running', timestamp: new Date().toISOString() });

@@ -44,6 +44,12 @@ export const api = {
   removeFavorite: (movieId) => request(`/favorites/${movieId}`, 'DELETE', null, true),
   checkFavorite: (movieId) => request(`/favorites/check/${movieId}`, 'GET', null, true),
   
+  // Watched
+  getWatched: () => request('/watched', 'GET', null, true),
+  addWatched: (movie) => request('/watched', 'POST', movie, true),
+  removeWatched: (movieId) => request(`/watched/${movieId}`, 'DELETE', null, true),
+  checkWatched: (movieId) => request(`/watched/check/${movieId}`, 'GET', null, true),
+
   // Groups
   createGroup: () => request('/groups/create', 'POST', {}, true),
   joinGroup: (code) => request('/groups/join', 'POST', { code }, true),
