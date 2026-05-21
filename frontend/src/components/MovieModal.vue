@@ -39,15 +39,22 @@
               <div v-if="movie.cast && movie.cast.length" class="modal-section">
                 <h4>ELENCO</h4>
                 <div class="cast-row">
-                  <div v-for="actor in movie.cast" :key="actor.id" class="cast-item">
-                    <img
-                      :src="actor.profile_path ? 'https://image.tmdb.org/t/p/w185' + actor.profile_path : 'https://via.placeholder.com/60x60/1a1a2e/FFD700?text=?'"
-                      :alt="actor.name"
-                      class="cast-photo"
-                    />
-                    <span class="cast-name">{{ actor.name }}</span>
-                    <span class="cast-character">{{ actor.character }}</span>
-                  </div>
+                <div
+  v-for="actor in movie.cast"
+  :key="actor.id"
+  class="cast-item clickable"
+  @click="openActorDetail(actor)"
+>
+  <img
+    :src="actor.profile_path
+      ? 'https://image.tmdb.org/t/p/w185' + actor.profile_path
+      : 'https://via.placeholder.com/60x60/1a1a2e/FFD700?text=?'"
+    :alt="actor.name"
+    class="cast-photo"
+  />
+  <span class="cast-name">{{ actor.name }}</span>
+  <span class="cast-character">{{ actor.character }}</span>
+</div> 
                 </div>
               </div>
 
@@ -196,6 +203,66 @@
         </template>
       </div>
     </div>
+    <Transition name="actor-slide">
+  <div v-if="selectedActor || actorLoading" class="actor-overlay" @click.self="selectedActor = null">
+    <div class="actor-panel">
+      <button class="actor-close" @click="selectedActor = null">✕</button>
+
+      <div v-if="actorLoading" class="loading-dots" style="padding:60px">
+        <span></span><span></span><span></span>
+      </div>
+
+      <template v-else-if="selectedActor">
+        <div class="actor-header">
+          <img
+            :src="selectedActor.profile_path
+              ? 'https://image.tmdb.org/t/p/w185' + selectedActor.profile_path
+              : 'https://via.placeholder.com/100x150/1a1a2e/FFD700?text=?'"
+            :alt="selectedActor.name"
+            class="actor-profile-img"
+          />
+          <div class="actor-info">
+            <h3 class="actor-name">{{ selectedActor.name }}</h3>
+            <p v-if="selectedActor.birthday" class="actor-meta">
+              🎂 {{ selectedActor.birthday }}
+            </p>
+            <p v-if="selectedActor.place_of_birth" class="actor-meta">
+              📍 {{ selectedActor.place_of_birth }}
+            </p>
+          </div>
+        </div>
+
+        <div v-if="selectedActor.biography" class="actor-bio-section">
+          <p class="actor-bio" :class="{ expanded: showBio }">
+            {{ selectedActor.biography }}
+          </p>
+          <button class="bio-toggle" @click="showBio = !showBio">
+            {{ showBio ? 'Ver menos ▲' : 'Ver más ▼' }}
+          </button>
+        </div>
+
+        <div v-if="selectedActor.known_for?.length" class="actor-known">
+          <h4>CONOCIDO/A POR</h4>
+          <div class="known-row">
+            <div
+              v-for="item in selectedActor.known_for"
+              :key="item.id"
+              class="known-item"
+            >
+              <img
+                :src="'https://image.tmdb.org/t/p/w92' + item.poster_path"
+                :alt="item.title"
+                class="known-poster"
+              />
+              <span class="known-title">{{ item.title }}</span>
+              <span class="known-year">{{ item.year }}</span>
+            </div>
+          </div>
+        </div>
+      </template>
+    </div>
+  </div>
+</Transition>
   </Teleport>
 </template>
 
@@ -220,7 +287,21 @@ const isSubmitting = ref(false)
 const reviewEditandoId = ref(null) 
 const editComment      = ref('')
 const editRating       = ref(5)
-
+const selectedActor  = ref(null)
+const actorLoading   = ref(false)
+const showBio        = ref(false)
+async function openActorDetail(actor) {
+  selectedActor.value = null
+  actorLoading.value  = true
+  showBio.value       = false
+  try {
+    selectedActor.value = await api.personDetail(actor.id)
+  } catch {
+    toast.show('No se pudo cargar el perfil', 'error')
+  } finally {
+    actorLoading.value = false
+  }
+}
 
 const PLACEHOLDER = 'https://via.placeholder.com/200x300/1a1a2e/FFD700?text=NO'
 
@@ -703,4 +784,97 @@ async function toggleFav() {
   margin-right: 4px;
   filter: brightness(0) saturate(100%) invert(72%) sepia(98%) saturate(400%) hue-rotate(3deg) brightness(103%) contrast(101%);
 }
+
+.cast-item.clickable {
+  cursor: pointer;
+  transition: transform $transition;
+  &:hover { transform: translateY(-4px); }
+  &:hover .cast-photo { border-color: $gold; }
+}
+
+.actor-overlay {
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(0,0,0,0.75);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+
+.actor-panel {
+  background: $bg2; border: 1px solid $border; border-radius: 16px;
+  width: 100%; max-width: 480px; max-height: 85vh;
+  overflow-y: auto; padding: 28px; position: relative;
+}
+
+.actor-close {
+  position: absolute; top: 14px; right: 14px;
+  background: rgba(0,0,0,0.6); border: 1px solid $border; color: $text;
+  width: 32px; height: 32px; border-radius: 50%; font-size: 14px;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  &:hover { background: $red; border-color: $red; }
+}
+
+.actor-header {
+  display: flex; gap: 20px; margin-bottom: 20px;
+}
+
+.actor-profile-img {
+  width: 90px; height: 135px; border-radius: 10px;
+  object-fit: cover; border: 2px solid $border; flex-shrink: 0;
+}
+
+.actor-info { display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+
+.actor-name {
+  font-family: $font-display; font-size: 22px; letter-spacing: 0.5px; color: $text;
+}
+
+.actor-meta { font-size: 13px; color: $text2; }
+
+.actor-bio-section { margin-bottom: 20px; }
+
+.actor-bio {
+  font-size: 13px; color: $text2; line-height: 1.7;
+  display: -webkit-box; -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical; overflow: hidden;
+  line-clamp: 4;
+ &.expanded { display: block; -webkit-line-clamp: unset; line-clamp: unset; }
+}
+
+.bio-toggle {
+  background: none; border: none; color: $gold;
+  font-size: 12px; cursor: pointer; font-family: $font-body;
+  margin-top: 6px; padding: 0;
+}
+
+.actor-known h4 {
+  font-size: 11px; letter-spacing: 2px; color: $text3;
+  text-transform: uppercase; margin-bottom: 10px;
+}
+
+.known-row {
+  display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px;
+  &::-webkit-scrollbar { height: 3px; }
+  &::-webkit-scrollbar-thumb { background: $bg4; border-radius: 4px; }
+}
+
+.known-item {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 4px; flex-shrink: 0; width: 70px;
+}
+
+.known-poster {
+  width: 70px; height: 105px; border-radius: 6px;
+  object-fit: cover; border: 1px solid $border;
+}
+
+.known-title {
+  font-size: 10px; color: $text; text-align: center;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%;
+}
+
+.known-year { font-size: 10px; color: $text3; }
+
+/* Transición */
+.actor-slide-enter-active, .actor-slide-leave-active { transition: opacity 0.2s ease; }
+.actor-slide-enter-from, .actor-slide-leave-to { opacity: 0; }
 </style>

@@ -25,6 +25,7 @@ export const api = {
 
   // Movies
   search: (q, page = 1) => request(`/movies/search?q=${encodeURIComponent(q)}&page=${page}`),
+  personDetail: (id) => request(`/movies/person/${id}`),
   searchTV: (q, page = 1) => request(`/movies/search-tv?q=${encodeURIComponent(q)}&page=${page}`),
   popular: (page = 1) => request(`/movies/popular?page=${page}`),
   movieDetail: (id, type = 'movie') => {

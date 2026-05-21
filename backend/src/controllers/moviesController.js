@@ -225,11 +225,46 @@ const getNowPlaying = async (req, res) => {
     res.status(500).json({ error: 'Error al obtener cartelera' });
   }
 };
+ const getPersonDetail = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [person, credits] = await Promise.all([
+      tmdb.get(`/person/${id}`),
+      tmdb.get(`/person/${id}/combined_credits`)
+    ]);
 
+    const knownFor = (credits.data.cast || [])
+      .filter(c => c.poster_path)
+      .sort((a, b) => b.popularity - a.popularity)
+      .slice(0, 8)
+      .map(c => ({
+        id:          c.id,
+        media_type:  c.media_type,
+        title:       c.title || c.name,
+        poster_path: c.poster_path,
+        character:   c.character,
+        year:        (c.release_date || c.first_air_date || '').substring(0, 4)
+      }));
+
+    res.json({
+      id:              person.data.id,
+      name:            person.data.name,
+      profile_path:    person.data.profile_path,
+      birthday:        person.data.birthday,
+      place_of_birth:  person.data.place_of_birth,
+      biography:       person.data.biography,
+      known_for:       knownFor
+    });
+  } catch (err) {
+    console.error('getPersonDetail:', err.message);
+    res.status(500).json({ error: 'Error al obtener perfil del actor' });
+  }
+};
 module.exports = {
   searchMovies,
   getPopular,
   getMovieDetail,
+  getPersonDetail,
   discoverMovies,
   getRandomMovie,
   getGenres,
