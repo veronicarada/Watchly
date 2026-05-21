@@ -27,7 +27,10 @@
               <span v-if="movie.media_type === 'tv'" class="media-badge">📺 Serie</span>
               <p v-if="movie.tagline" class="modal-tagline">"{{ movie.tagline }}"</p>
               <div class="modal-meta">
-                <span class="rating-badge">★ {{ movie.vote_average?.toFixed(1) }}</span>
+  <span class="rating-badge">
+    <img src="https://www.themoviedb.org/assets/2/v4/logos/v2/blue_short-8e7b30f73a4020692ccca9c88bafe5dcb20f75de08bd31975aa918e0c9cb90d0.svg" alt="TMDb" class="tmdb-logo" />
+    {{ movie.vote_average?.toFixed(1) }}
+  </span>
                 <span>{{ year }}</span>
                 <span>{{ movie.runtime ? movie.runtime + ' min' : (movie.episode_run_time?.[0] ? movie.episode_run_time[0] + ' min/ep' : '—') }}</span>
               </div>
@@ -86,21 +89,22 @@
               <div class="modal-section reviews-section">
                 <h4>OPINIONES</h4>
                 <div v-if="auth.isLoggedIn" class="review-form">
-                  <div class="stars-input">
-                    <button
-                      v-for="n in 5" :key="n"
-                      class="star-btn"
-                      :class="{ active: n <= rating }"
-                      @click="rating = n"
-                    >★</button>
-                  </div>
-                  <textarea
-                    v-model="comment"
-                    placeholder="Escribí tu opinión..."
-                    class="review-textarea"
-                    rows="2"
-                  ></textarea>
-                  <button class="btn-primary" :disabled="isSubmitting || !comment.trim()" @click="handleSendReview">
+<!-- DESPUÉS -->
+<div class="stars-input">
+  <button
+    v-for="n in 5" :key="n"
+    class="star-btn"
+    :class="{ active: n <= rating }"
+    @click="rating = (rating === n ? 0 : n)"
+  >★</button>
+</div>
+<textarea
+  v-model="comment"
+  placeholder="Escribí tu opinión..."
+  class="review-textarea"
+  rows="2"
+></textarea>
+<button class="btn-primary" :disabled="isSubmitting || !comment.trim() || rating === 0" @click="handleSendReview">
                     {{ isSubmitting ? 'Publicando...' : 'Publicar opinión' }}
                   </button>
                 </div>
@@ -211,7 +215,7 @@ const loading      = ref(false)
 const isFav        = ref(false)
 const reviews      = ref([])
 const comment      = ref('')
-const rating       = ref(5)
+const rating       = ref(0)
 const isSubmitting = ref(false)
 const reviewEditandoId = ref(null) 
 const editComment      = ref('')
@@ -692,5 +696,11 @@ async function toggleFav() {
   transition: opacity 0.2s;
   &:hover { opacity: 0.7; }
 }
-
+.tmdb-logo {
+  height: 10px;
+  width: auto;
+  vertical-align: middle;
+  margin-right: 4px;
+  filter: brightness(0) saturate(100%) invert(72%) sepia(98%) saturate(400%) hue-rotate(3deg) brightness(103%) contrast(101%);
+}
 </style>
