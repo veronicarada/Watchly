@@ -82,7 +82,9 @@ import { ref, onMounted } from 'vue'
 import { useModalStore } from '@/stores/modal'
 import { useAuthStore }  from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const modal   = useModalStore()
 const auth    = useAuthStore()
 const toast   = useToastStore()
@@ -97,6 +99,10 @@ async function handleLogin() {
     await auth.login(loginForm.value.email, loginForm.value.password)
     modal.closeAuth()
     toast.show(`¡Bienvenido, ${auth.user.username}! 🎬`, 'success')
+    const pendingCode = localStorage.getItem('watchly_pending_join')
+    if (pendingCode) {
+      router.push(`/join/${pendingCode}`)
+    }
   } catch (err) { toast.show(err.message, 'error') }
   finally { loading.value = false }
 }
@@ -122,6 +128,8 @@ async function handleRegister() {
     await auth.register(registerForm.value.username, registerForm.value.email, registerForm.value.password)
     modal.closeAuth()
     toast.show(`¡Cuenta creada! Bienvenido ${auth.user.username} 🎉`, 'success')
+    const pendingCode = localStorage.getItem('watchly_pending_join')
+   if (pendingCode) router.push(`/join/${pendingCode}`)
   } catch (err) { toast.show(err.message, 'error') }
   finally { loading.value = false }
 }
@@ -144,6 +152,8 @@ onMounted(() => {
           await auth.googleLogin(credential)
           modal.closeAuth()
           toast.show(`¡Bienvenido, ${auth.user.username}! 🎬`, 'success')
+          const pendingCode = localStorage.getItem('watchly_pending_join')
+          if (pendingCode) router.push(`/join/${pendingCode}`)
         } catch (err) { toast.show(err.message, 'error') }
       }
     })

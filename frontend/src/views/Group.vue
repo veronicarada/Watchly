@@ -165,12 +165,15 @@ const route = useRoute()
 // Si vienen por link de invitación, unirse automáticamente
 onMounted(async () => {
   const codeFromUrl = route.params.code
-  if (codeFromUrl && auth.isLoggedIn) {
-    joinCode.value = codeFromUrl
+  const pendingCode = localStorage.getItem('watchly_pending_join')
+  const code = codeFromUrl || pendingCode
+
+  if (code && auth.isLoggedIn) {
+    localStorage.removeItem('watchly_pending_join')
+    joinCode.value = code
     await joinRoom()
-  } else if (codeFromUrl && !auth.isLoggedIn) {
-    // Guarda el código y pide login
-    localStorage.setItem('watchly_pending_join', codeFromUrl)
+  } else if (code && !auth.isLoggedIn) {
+    localStorage.setItem('watchly_pending_join', code)
     modal.openAuth('login')
   }
 })

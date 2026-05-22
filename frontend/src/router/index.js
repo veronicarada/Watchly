@@ -28,6 +28,9 @@ const router = createRouter({
 router.beforeEach((to) => {
   const token = localStorage.getItem('watchly_token')
   if (to.meta.requiresAuth && !token) {
+    if (to.name === 'JoinGroup' && to.params.code) {
+      localStorage.setItem('watchly_pending_join', to.params.code)
+    }
     return { name: 'Home', query: { login: 'true' } }
   }
 })
