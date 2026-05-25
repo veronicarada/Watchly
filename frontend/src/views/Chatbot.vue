@@ -19,7 +19,7 @@
         <div class="chat-messages" ref="messagesEl">
           <div v-for="(msg, i) in messages" :key="i"
                class="message" :class="msg.role">
-            <div class="bubble">{{ msg.content }}</div>
+            <div class="bubble" v-html="formatMessage(msg.content)"></div>
           </div>
           <div v-if="loading" class="message assistant">
             <div class="bubble">
@@ -83,8 +83,16 @@ const chips = [
   '🍿 Una comedia para no pensar',
   '⚡ Series cortas',
   '👨‍👩‍👧‍👦 Una opción para ver en familia',
-  '🔥 Lo más visto',
+  '🔥 Lo más visto hoy',
 ]
+
+function formatMessage(text) {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^- (.+)$/gm, '• $1')
+    .replace(/\n/g, '<br>')
+}
+
 
 function sendChip(text) {
   input.value = text

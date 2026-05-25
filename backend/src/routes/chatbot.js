@@ -1,55 +1,141 @@
 const express = require('express')
 const router = express.Router()
+const axios = require('axios')
+
+const TMDB_KEY = () => process.env.TMDB_API_KEY
+
+function normalize(text) {
+  return text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim()
+}
+
+const RECOMMENDATION_KEYWORDS = ['recomendar', 'recomienda', 'sugeri', 'sugiere', 'comedia', 'terror', 'romance', 'familia', 'niños', 'maratonear', 'ver hoy', 'para ver', 'series cortas', 'lo mas visto', 'trending', 'popular', 'tendencia', 'novedad', 'estreno', 'cartelera']
+
+async function getTrending() {
+  try {
+    const [movies, tv] = await Promise.all([
+      axios.get('https://api.themoviedb.org/3/trending/movie/week', { params: { api_key: TMDB_KEY(), language: 'es-AR' } }),
+      axios.get('https://api.themoviedb.org/3/trending/tv/week', { params: { api_key: TMDB_KEY(), language: 'es-AR' } })
+    ])
+    const results = [
+      ...movies.data.results.slice(0, 5).map(m => `- **${m.title}** (${m.release_date?.substring(0,4)}) — película`),
+      ...tv.data.results.slice(0, 5).map(t => `- **${t.name}** (${t.first_air_date?.substring(0,4)}) — serie`)
+    ]
+    return `Esto es lo más visto esta semana según TMDB:\n${results.join('\n')}`
+  } catch { return null }
+}
+
+async function getMovieInfo(query) {
+  try {
+    const q = normalize(query)
+    if (q.length < 2) return null
+    const [movRes, tvRes] = await Promise.all([
+      axios.get('https://api.themoviedb.org/3/search/movie', { params: { api_key: TMDB_KEY(), query: q, language: 'es-AR' } }),
+      axios.get('https://api.themoviedb.org/3/search/tv', { params: { api_key: TMDB_KEY(), query: q, language: 'es-AR' } })
+    ])
+
+    const lines = []
+    for (const movie of movRes.data.results.slice(0, 2)) {
+      const d = (await axios.get(`https://api.themoviedb.org/3/movie/${movie.id}`, {
+        params: { api_key: TMDB_KEY(), language: 'es-AR', append_to_response: 'credits' }
+      })).data
+      const cast = d.credits?.cast?.slice(0, 5).map(c => c.name).join(', ') || 'No disponible'
+      const dir = d.credits?.crew?.filter(c => c.job === 'Director').map(c => c.name).join(', ') || 'No disponible'
+      lines.push(`🎬 **${d.title}** (${d.release_date?.substring(0,4)}) — Película\nDirector: ${dir}\nReparto: ${cast}\nSinopsis: ${d.overview?.substring(0,200) || 'No disponible'}\nPuntuación: ${d.vote_average?.toFixed(1)}/10`)
+    }
+    for (const show of tvRes.data.results.slice(0, 1)) {
+      const d = (await axios.get(`https://api.themoviedb.org/3/tv/${show.id}`, {
+        params: { api_key: TMDB_KEY(), language: 'es-AR', append_to_response: 'credits' }
+      })).data
+      const cast = d.credits?.cast?.slice(0, 5).map(c => c.name).join(', ') || 'No disponible'
+      lines.push(`📺 **${d.name}** (${d.first_air_date?.substring(0,4)}) — Serie\nCreador: ${d.created_by?.map(c=>c.name).join(', ') || 'No disponible'}\nReparto: ${cast}\nTemporadas: ${d.number_of_seasons}\nSinopsis: ${d.overview?.substring(0,200) || 'No disponible'}\nPuntuación: ${d.vote_average?.toFixed(1)}/10`)
+    }
+    return lines.length > 0 ? lines.join('\n\n') : null
+  } catch { return null }
+}
+
+async function getPersonInfo(name) {
+  try {
+    const searchRes = await axios.get('https://api.themoviedb.org/3/search/multi', {
+      params: { api_key: TMDB_KEY(), query: name, language: 'es-AR' }
+    })
+
+    const people = searchRes.data.results.filter(r => r.media_type === 'person')
+
+    for (const person of people.slice(0, 3)) {
+      const personNorm = normalize(person.name)
+      const inputWords = normalize(name).split(' ').filter(w => w.length > 2)
+      const matches = inputWords.filter(w => personNorm.includes(w))
+      const hasPartialMatch = inputWords.some(w => 
+     personNorm.split(' ').some(pw => pw.startsWith(w.substring(0, 4)) || w.startsWith(pw.substring(0, 4)))
+    )
+    if (matches.length === 0 && !hasPartialMatch) continue
+
+      const credits = person.known_for?.filter(k => k.media_type === 'movie' || k.media_type === 'tv')
+      if (!credits?.length) {
+        return `No encontré películas o series en las que haya participado **${person.name}** en el ámbito audiovisual.`
+      }
+      const list = credits.slice(0, 5).map(k =>
+        `- **${k.title || k.name}** (${(k.release_date || k.first_air_date)?.substring(0,4)}) — ${k.media_type === 'movie' ? 'película' : 'serie'}`
+      ).join('\n')
+      return `**${person.name}** participó en:\n${list}`
+    }
+    return null
+  } catch { return null }
+}
 
 router.post('/', async (req, res) => {
   const { messages, preferences } = req.body
-
   const today = new Date().toLocaleDateString('es-AR', { year: 'numeric', month: 'long' })
+  const lastMsg = messages.filter(m => m.role === 'user').slice(-1)[0]?.content || ''
+  const lower = normalize(lastMsg)
 
-  const prefsText = preferences
-    ? `\nPreferencias del usuario: le gustan ${preferences.likes?.join(', ') || 'variado'} y NO le gustan ${preferences.dislikes?.join(', ') || 'nada en particular'}.`
-    : ''
+  const isTrending = ['mas visto', 'lo mas visto', 'tendencia', 'trending', 'popular hoy', 'top hoy'].some(k => lower.includes(k))
+  const isRecommendation = RECOMMENDATION_KEYWORDS.some(k => lower.includes(k))
 
-  try {
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'google/gemma-3-4b-it:free',
-        messages: [
-          {
-            role: 'system',
-            content: `Sos un asistente experto en entretenimiento dentro de Watchly, una app para descubrir contenido audiovisual.
-Respondé siempre en español, de forma amigable y concisa.
-La fecha actual es ${today}. Usá esta fecha como referencia para todo.
-Podés ayudar con:
-1. PELÍCULAS: reparto, director, año, curiosidades, historia, premios, cartelera actual, últimos lanzamientos.
-2. SERIES Y MINISERIES: temporadas, personajes, plataformas, curiosidades, últimas temporadas.
-3. DOCUMENTALES: temática, director, plataformas donde verlos.
-4. TELENOVELAS Y REALITY SHOWS: información general, dónde verlos.
-5. RECOMENDACIONES: sugerí contenido según géneros, estado de ánimo, director favorito o preferencias del usuario.
-Cuando recomiendes, usá este formato limpio:
-- Título (año) — Una línea de descripción corta.
-No uses asteriscos ni markdown. Solo texto plano y guiones.
-Cuando el usuario pregunte por tendencias, lo más visto, novedades o estrenos recientes, recomendá el contenido más popular y reciente que conozcas hasta la fecha actual.
-Si el usuario menciona que algo no le gusta, recordalo para no recomendarlo.${prefsText}
-Si te preguntan algo que no tiene que ver con entretenimiento audiovisual, deciles amablemente que solo podés ayudar con esos temas.`
-          },
-          ...messages.map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content }))
-        ]
-      })
-    })
-
-    const data = await response.json()
-    const reply = data.choices?.[0]?.message?.content || 'No pude generar una respuesta.'
-    res.json({ reply })
-  } catch (err) {
-    console.error(err)
-    res.status(500).json({ error: 'Error al consultar el asistente' })
+  if (isTrending) {
+    const trending = await getTrending()
+    return res.json({ reply: trending || 'No pude obtener las tendencias ahora.' })
   }
+
+  if (isRecommendation || lastMsg.trim().split(/\s+/).length > 5) {
+    const prefsText = preferences?.dislikes?.length ? `No recomiendes: ${preferences.dislikes.join(', ')}.` : ''
+    const systemContent = `Sos un asistente de entretenimiento de Watchly. Solo respondés sobre películas, series, miniseries, telenovelas y documentales.
+Respondé en español argentino. Máximo 3 recomendaciones. Formato: - **Título** (año) — descripción.
+Fecha: ${today}. ${prefsText}
+Si preguntan algo que no es entretenimiento audiovisual, respondé: "Eso no es mi especialidad, pero puedo ayudarte con películas, series, documentales y entretenimiento audiovisual. ¿En qué te ayudo?"`
+    try {
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`, 'HTTP-Referer': 'https://watchly.app', 'X-Title': 'Watchly' },
+        body: JSON.stringify({
+          model: 'openai/gpt-oss-120b:free',
+          max_tokens: 250,
+          temperature: 0.3,
+          messages: [
+            { role: 'system', content: systemContent },
+            ...messages.map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content }))
+          ]
+        })
+      })
+      const data = await response.json()
+      const reply = data.choices?.[0]?.message?.content || 'No pude generar una respuesta.'
+      return res.json({ reply })
+    } catch (err) {
+      console.error(err)
+      return res.status(500).json({ error: 'Error al consultar el asistente' })
+    }
+  }
+
+  const stopWords = new Set(['la', 'el', 'los', 'las', 'un', 'una', 'de', 'del', 'al', 'en', 'con', 'por', 'para', 'que', 'se', 'escritora', 'escritor', 'actor', 'actriz', 'cantante', 'director', 'directora', 'sobre', 'acerca', 'donde', 'participo', 'actuo', 'quien', 'es', 'fue', 'hay', 'tiene', 'cual', 'cuales', 'pelicula', 'serie', 'informacion'])
+  const cleanName = lower.split(/\s+/).filter(w => w.length > 1 && !stopWords.has(w)).join(' ')
+
+  const movieResult = await getMovieInfo(cleanName)
+  if (movieResult) return res.json({ reply: movieResult })
+
+  const personResult = await getPersonInfo(cleanName)
+  if (personResult) return res.json({ reply: personResult })
+
+  return res.json({ reply: `No encontré información sobre "${lastMsg.trim()}" en películas, series o entretenimiento audiovisual. ¿Querés que te recomiende algo?` })
 })
 
 module.exports = router
