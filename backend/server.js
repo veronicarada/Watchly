@@ -4,10 +4,31 @@ const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
 const rateLimit = require('express-rate-limit');
+const swaggerJsdoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
 
 const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 3001;
+
+// ─── Swagger ──────────────────────────────────────────────────────────────────
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Watchly API',
+      version: '1.0.0',
+      description: 'API de Watchly — plataforma de cine grupal',
+    },
+    servers: [
+      { url: 'http://localhost:3001/api', description: 'Local' }
+    ],
+  },
+  apis: ['./src/routes/*.js'],
+}
+const swaggerSpec = swaggerJsdoc(swaggerOptions)
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
+// ─────────────────────────────────────────────────────────────────────────────
 
 const io = new Server(server, {
   cors: {
@@ -22,7 +43,6 @@ const io = new Server(server, {
   }
 });
 
-// Guardar mensajes en memoria por sala (se borran cuando el server reinicia)
 const roomMessages = {}
 
 io.on('connection', (socket) => {
@@ -40,7 +60,6 @@ io.on('connection', (socket) => {
     }
   })
 
-  // Rejoin silencioso para el popout: solo suscribe y manda historial, sin anunciar
   socket.on('rejoin-room', ({ code, username }) => {
     socket.join(code)
     socket.data.username = username
@@ -115,5 +134,6 @@ app.use((err, req, res, next) => {
 server.listen(PORT, () => {
   console.log(`\n🎬 Watchly Backend corriendo en http://localhost:${PORT}`);
   console.log(`📡 API disponible en http://localhost:${PORT}/api`);
+  console.log(`📋 Swagger docs en http://localhost:${PORT}/api/docs`);
   console.log(`🔑 Environment: ${process.env.NODE_ENV || 'development'}\n`);
 });

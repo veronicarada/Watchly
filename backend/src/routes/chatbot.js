@@ -83,6 +83,35 @@ async function getPersonInfo(name) {
   } catch { return null }
 }
 
+/**
+ * @swagger
+ * /chatbot:
+ *   post:
+ *     summary: Consulta al asistente de cine
+ *     tags: [Chatbot]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               messages:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     role:
+ *                       type: string
+ *                     content:
+ *                       type: string
+ *               preferences:
+ *                 type: object
+ *     responses:
+ *       200:
+ *         description: Respuesta del asistente
+ */
+
 router.post('/', async (req, res) => {
   const { messages, preferences } = req.body
   const today = new Date().toLocaleDateString('es-AR', { year: 'numeric', month: 'long' })
