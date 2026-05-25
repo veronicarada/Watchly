@@ -1,24 +1,32 @@
 <template>
   <div id="app">
-    <Navbar />
-    <main>
+    <template v-if="!route.meta.noLayout">
+      <Navbar />
+      <main>
+        <RouterView />
+      </main>
+      <MobileNav />
+      <MovieModal />
+      <AuthModal />
+      <ToastContainer />
+      <ChatBot />
+    </template>
+    <template v-else>
       <RouterView />
-    </main>
-    <MobileNav />
-    <MovieModal />
-    <AuthModal />
-    <ToastContainer />
-    <ChatBot />
+    </template>
   </div>
 </template>
 
 <script setup>
+import { useRoute } from 'vue-router'
 import Navbar         from '@/components/Navbar.vue'
 import MobileNav      from '@/components/MobileNav.vue'
 import MovieModal     from '@/components/MovieModal.vue'
 import AuthModal      from '@/components/AuthModal.vue'
 import ToastContainer from '@/components/ToastContainer.vue'
 import ChatBot        from '@/views/Chatbot.vue'
+
+const route = useRoute()
 </script>
 
 <style lang="scss">

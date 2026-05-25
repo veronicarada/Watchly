@@ -65,10 +65,10 @@ async function getPersonInfo(name) {
       const personNorm = normalize(person.name)
       const inputWords = normalize(name).split(' ').filter(w => w.length > 2)
       const matches = inputWords.filter(w => personNorm.includes(w))
-      const hasPartialMatch = inputWords.some(w => 
-     personNorm.split(' ').some(pw => pw.startsWith(w.substring(0, 4)) || w.startsWith(pw.substring(0, 4)))
-    )
-    if (matches.length === 0 && !hasPartialMatch) continue
+      const hasPartialMatch = inputWords.some(w =>
+        personNorm.split(' ').some(pw => pw.startsWith(w.substring(0, 4)) || w.startsWith(pw.substring(0, 4)))
+      )
+      if (matches.length === 0 && !hasPartialMatch) continue
 
       const credits = person.known_for?.filter(k => k.media_type === 'movie' || k.media_type === 'tv')
       if (!credits?.length) {
@@ -89,6 +89,20 @@ router.post('/', async (req, res) => {
   const lastMsg = messages.filter(m => m.role === 'user').slice(-1)[0]?.content || ''
   const lower = normalize(lastMsg)
 
+  // ── FILTRO OFF-TOPIC ──────────────────────────────────────────────────────
+  const OFF_TOPIC_PATTERNS = [
+    /\bclima\b/, /\btemperatura\b/, /\btiempo\b.*hoy/, /\breceta[s]?\b/,
+    /\bnoticias?\b/, /\bpolitica\b/, /\bdeporte[s]?\b(?!.*pelicula)/,
+    /\bcomo estas\b/, /\bchiste[s]?\b/, /\bpoema[s]?\b/,
+    /\bque hora\b/, /\bcalculadora\b/, /\btraduc/,
+    /\bmoneda[s]?\b/, /\bcotizacion\b/, /\bdolar\b/
+  ]
+  const isOffTopic = OFF_TOPIC_PATTERNS.some(p => p.test(lower))
+  if (isOffTopic) {
+    return res.json({ reply: 'Solo puedo ayudarte con películas, series, documentales y entretenimiento audiovisual. ¿Qué querés buscar o ver?' })
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   const isTrending = ['mas visto', 'lo mas visto', 'tendencia', 'trending', 'popular hoy', 'top hoy'].some(k => lower.includes(k))
   const isRecommendation = RECOMMENDATION_KEYWORDS.some(k => lower.includes(k))
 
@@ -99,10 +113,15 @@ router.post('/', async (req, res) => {
 
   if (isRecommendation || lastMsg.trim().split(/\s+/).length > 5) {
     const prefsText = preferences?.dislikes?.length ? `No recomiendes: ${preferences.dislikes.join(', ')}.` : ''
-    const systemContent = `Sos un asistente de entretenimiento de Watchly. Solo respondés sobre películas, series, miniseries, telenovelas y documentales.
-Respondé en español argentino. Máximo 3 recomendaciones. Formato: - **Título** (año) — descripción.
-Fecha: ${today}. ${prefsText}
-Si preguntan algo que no es entretenimiento audiovisual, respondé: "Eso no es mi especialidad, pero puedo ayudarte con películas, series, documentales y entretenimiento audiovisual. ¿En qué te ayudo?"`
+    const systemContent = `Sos el asistente de Watchly, especializado ÚNICAMENTE en películas, series, telenovelas, miniseries y documentales.
+
+REGLAS ESTRICTAS:
+1. Si la pregunta NO es sobre contenido audiovisual (clima, noticias, política, recetas, etc.), respondé ÚNICAMENTE: "Solo puedo ayudarte con películas, series, documentales y entretenimiento audiovisual. ¿Qué querés buscar o ver?"
+2. Nunca respondas preguntas fuera del entretenimiento audiovisual, aunque el usuario insista.
+3. Podés informar: reparto, director, año, sinopsis, plataforma, música, premios, productora.
+4. Respondé siempre en español argentino.
+5. Máximo 3 recomendaciones. Formato: - **Título** (año) — descripción corta.
+Fecha actual: ${today}. ${prefsText}`
     try {
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',

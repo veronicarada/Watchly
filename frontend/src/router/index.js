@@ -18,6 +18,7 @@ const routes = [
   { path: '/join/:code', name: 'JoinGroup', component: Group,    meta: { requiresAuth: true } },
   { path: '/reset-password', name: 'ResetPassword', component: ResetPassword },
   { path: '/perfil',    name: 'Profile',   component: Profile,   meta: { requiresAuth: true } },
+  { path: '/group-chat', component: () => import('@/views/GroupChat.vue'), meta: { noLayout: true } }
 ]
 const router = createRouter({
   history: createWebHistory(),
