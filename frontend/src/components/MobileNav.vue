@@ -3,7 +3,7 @@
     <RouterLink to="/"          class="nav-item"><span>🏠</span><span>Inicio</span></RouterLink>
     <RouterLink to="/explorar"  class="nav-item"><span>🔍</span><span>Explorar</span></RouterLink>
     <RouterLink to="/sorpresa"  class="nav-item"><span>🎲</span><span>Sorpresa</span></RouterLink>
-    <RouterLink to="/favoritas" class="nav-item"><span>❤️</span><span>Favoritas</span></RouterLink>
+    <RouterLink to="/favoritas" class="nav-item"><span>⭐</span><span>Mis listas</span></RouterLink>
     <RouterLink to="/grupo"     class="nav-item"><span>👥</span><span>Grupo</span></RouterLink>
   </nav>
 </template>

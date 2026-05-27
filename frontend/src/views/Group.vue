@@ -261,6 +261,8 @@ function initSocket(code) {
     scrollChat()
   })
   socket.on('user-left', ({ username: u }) => {
+    const myUsername = auth.user?.username || auth.user?.email?.split('@')[0] || 'Anónimo'
+    if (u === myUsername) return  // ignorar si soy yo mismo
     chatMessages.value.push({ username: '🎬 Sistema', text: `${u} salió del grupo` })
     scrollChat()
   })
