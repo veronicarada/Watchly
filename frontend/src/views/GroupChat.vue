@@ -35,8 +35,27 @@ let socket = null
 
 onMounted(() => {
   const SOCKET_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3001'
-  socket = io(SOCKET_URL)
-  socket.emit('rejoin-room', { code, username })
+  socket = io(SOCKET_URL, { transports: ['websocket', 'polling'] })
+
+  function joinRoom() {
+    socket.emit('rejoin-room', { code, username })
+  }
+
+  // Esperamos el evento 'connect' antes de entrar a la sala
+  // Así evitamos el race condition donde el emit se manda antes de que el socket esté listo
+  socket.on('connect', () => {
+    joinRoom()
+  })
+
+  // Si ya estaba conectado cuando llegamos (caso edge), lo hacemos igual
+  if (socket.connected) {
+    joinRoom()
+  }
+
+  // Reconexión automática: si se cae y vuelve, reentrar a la sala
+  socket.on('reconnect', () => {
+    joinRoom()
+  })
 
   socket.on('message-history', (msgs) => {
     messages.value = msgs
