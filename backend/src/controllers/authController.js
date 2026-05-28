@@ -126,23 +126,29 @@ const forgotPassword = async (req, res) => {
 
     if (insertError) throw insertError;
 
-    // Enviar email con Resend
-    const { Resend } = require('resend');
-    const resend = new Resend(process.env.RESEND_API_KEY);
+    // Enviar email con nodemailer
+    const nodemailer = require('nodemailer');
 
-    const resetLink = `https://watchly-frontend-ujve.onrender.com/reset-password?token=${token}`;
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS
+  }
+});
 
-    const result = await resend.emails.send({
-      from: 'onboarding@resend.dev',
-      to: email,
-      subject: 'Recuperá tu contraseña - Watchly',
-      html: `
-        <h2>Recuperar contraseña</h2>
-        <p>Hacé click en el link para resetear tu contraseña. Expira en 1 hora.</p>
-        <a href="${resetLink}">Resetear contraseña</a>
-      `
-    });
-    console.log('Resend result:', JSON.stringify(result));
+const resetLink = `https://watchly-frontend-ujve.onrender.com/reset-password?token=${token}`;
+
+await transporter.sendMail({
+  from: '"Watchly" <watchlymovie.app@gmail.com>',
+  to: email,
+  subject: 'Recuperá tu contraseña - Watchly',
+  html: `
+    <h2>Recuperar contraseña</h2>
+    <p>Hacé click en el link para resetear tu contraseña. Expira en 1 hora.</p>
+    <a href="${resetLink}">Resetear contraseña</a>
+  `
+});
 
     res.json({ message: 'Te enviamos un email para resetear tu contraseña' });
   } catch (err) {
