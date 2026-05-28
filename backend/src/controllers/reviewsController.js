@@ -55,6 +55,7 @@ exports.createReview = async (req, res) => {
     const { movie_id, rating, comment, media_type } = req.body;
     const user_id = req.user ? req.user.id : null;
     const user_email = req.user?.email || null; 
+    const user_username = req.user?.username || null;
 
     if (!user_id) {
         return res.status(401).json({ error: 'No autorizado. Usuario no detectado.' });
@@ -66,7 +67,8 @@ exports.createReview = async (req, res) => {
             .insert([{ 
                 movie_id, 
                 user_id, 
-                user_email, 
+                user_email,
+                user_username, 
                 rating, 
                 comment,
                 media_type: media_type || 'movie'

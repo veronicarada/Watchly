@@ -106,109 +106,111 @@
               </div>
 
               <div class="modal-section reviews-section">
-              <h4>OPINIONES</h4>
-<div v-if="auth.isLoggedIn" class="review-form">
-  <p class="review-hint">¿Viste esta película? Contanos qué te pareció y elegí cuántas estrellas le das.</p>
-  <div class="stars-input">
-  <button
-    v-for="n in 5" :key="n"
-    class="star-btn"
-    :class="{ active: n <= rating }"
-    @click="rating = (rating === n ? 0 : n)"
-  >★</button>
-</div>
-<textarea
-  v-model="comment"
-  placeholder="Escribí tu opinión..."
-  class="review-textarea"
-  rows="2"
-></textarea>
-<button class="btn-primary" :disabled="isSubmitting || !comment.trim() || rating === 0" @click="handleSendReview">
-                    {{ isSubmitting ? 'Publicando...' : 'Publicar opinión' }}
-                  </button>
+               <h4>OPINIONES</h4>
+
+               <div v-if="auth.isLoggedIn && !yaPublicó" class="review-form">
+                 <p class="review-hint">¿Viste esta película? Contanos qué te pareció y elegí cuántas estrellas le das.</p>
+                 <div class="stars-input">
+                   <button
+                     v-for="n in 5" :key="n"
+                     class="star-btn"
+                     :class="{ active: n <= rating }"
+                     @click="rating = (rating === n ? 0 : n)"
+                   >★</button>
                 </div>
-                <p v-else class="no-providers">
-                  <button class="link-btn" @click="modal.openAuth('login')">Iniciá sesión</button> para dejar tu opinión
-                </p>
+                <textarea
+                  v-model="comment"
+                 placeholder="Escribí tu opinión..."
+                  class="review-textarea"
+                 rows="2"
+               ></textarea>
+               <button class="btn-primary" :disabled="isSubmitting || !comment.trim()" @click="handleSendReview">
+                {{ isSubmitting ? 'Publicando...' : 'Publicar opinión' }}
+               </button>
+               <p v-if="starWarning" class="star-warning">
+               ⭐ Elegí cuántas estrellas le das antes de publicar
+               </p>
+             </div>
+
+             <p v-else-if="!auth.isLoggedIn" class="no-providers">
+              <button class="link-btn" @click="modal.openAuth('login')">Iniciá sesión</button> para dejar tu opinión
+             </p>
+
              <div v-if="reviews.length" class="reviews-list">
-  <div v-for="r in reviews" :key="r.id" class="review-item">
-    
-    <template v-if="reviewEditandoId !== r.id">
-      <div class="review-header">
-        <span class="review-user">{{ r.user_email?.split('@')[0] }}</span>
-        <span class="review-stars">{{ '★'.repeat(r.rating) }}{{ '☆'.repeat(5 - r.rating) }}</span>
-      </div>
-      <p class="review-comment">{{ r.comment }}</p>
+              <div v-for="r in reviews" :key="r.id" class="review-item">
 
-    <div class="review-footer-actions">
+                <template v-if="reviewEditandoId !== r.id">
+                 <div class="review-header">
+                    <span class="review-user">{{ r.user_username || r.user_email?.split('@')[0] }}</span>
+                   <span class="review-stars">{{ '★'.repeat(r.rating) }}{{ '☆'.repeat(5 - r.rating) }}</span>
+                 </div>
+                 <p class="review-comment">{{ r.comment }}</p>
 
-  <!-- Si es mi reseña: veo contadores + editar/eliminar -->
-  <template v-if="auth.isLoggedIn && auth.user?.id === r.user_id">
-    <div class="review-reactions-row">
-      <span class="rx-readonly" :class="{ active: r.agree_count > 0 }">
-        🤝 Concuerdo <span class="rx-badge">{{ r.agree_count || 0 }}</span>
-      </span>
-      <span class="rx-readonly" :class="{ active: r.disagree_count > 0 }">
-        👎 Desacuerdo <span class="rx-badge">{{ r.disagree_count || 0 }}</span>
-      </span>
-      <button class="btn-action-edit" @click="habilitarEdicion(r)">✏️ Editar</button>
-      <button class="btn-action-delete" @click="handleDeleteReview(r.id)">🗑️ Eliminar</button>
-    </div>
-  </template>
+                 <div class="review-footer-actions">
+                   <template v-if="auth.isLoggedIn && auth.user?.id === r.user_id">
+                    <div class="review-reactions-row">
+                     <span class="rx-readonly" :class="{ active: r.agree_count > 0 }">
+                      🤝 Concuerdo <span class="rx-badge">{{ r.agree_count || 0 }}</span>
+                     </span>
+                     <span class="rx-readonly" :class="{ active: r.disagree_count > 0 }">
+                      👎 Desacuerdo <span class="rx-badge">{{ r.disagree_count || 0 }}</span>
+                     </span>
+                     <button class="btn-action-edit" @click="habilitarEdicion(r)">✏️ Editar</button>
+                     <button class="btn-action-delete" @click="handleDeleteReview(r.id)">🗑️ Eliminar</button>
+                    </div>
+                   </template>
 
-  <!-- Si es reseña de otro usuario logueado: botones clicables -->
-  <template v-else-if="auth.isLoggedIn">
-    <div class="review-reactions-row">
-      <button 
-        class="rx-btn agree" 
-        :class="{ active: r.user_voted === 'agree' }" 
-        @click="handleReactReview(r, 'agree')"
-      >
-        🤝 Concuerdo <span class="rx-badge">{{ r.agree_count || 0 }}</span>
-      </button>
-      <button 
-        class="rx-btn disagree" 
-        :class="{ active: r.user_voted === 'disagree' }" 
-        @click="handleReactReview(r, 'disagree')"
-      >
-        👎 Desacuerdo <span class="rx-badge">{{ r.disagree_count || 0 }}</span>
-      </button>
-    </div>
-  </template>
+          <template v-else-if="auth.isLoggedIn">
+            <div class="review-reactions-row">
+              <button
+                class="rx-btn agree"
+                :class="{ active: r.user_voted === 'agree' }"
+                @click="handleReactReview(r, 'agree')"
+              >
+                🤝 Concuerdo <span class="rx-badge">{{ r.agree_count || 0 }}</span>
+              </button>
+              <button
+                class="rx-btn disagree"
+                :class="{ active: r.user_voted === 'disagree' }"
+                @click="handleReactReview(r, 'disagree')"
+              >
+                👎 Desacuerdo <span class="rx-badge">{{ r.disagree_count || 0 }}</span>
+              </button>
+            </div>
+          </template>
 
-  <!-- Sin sesión: solo contadores -->
-  <template v-else>
-    <div class="review-reactions-row">
-      <span class="rx-readonly">🤝 <span class="rx-badge">{{ r.agree_count || 0 }}</span></span>
-      <span class="rx-readonly">👎 <span class="rx-badge">{{ r.disagree_count || 0 }}</span></span>
-    </div>
-  </template>
-
-</div>
-    </template>
-
-    <template v-else>
-      <div class="review-form-edit">
-        <div class="stars-input">
-          <button
-            v-for="n in 5" :key="n"
-            class="star-btn"
-            :class="{ active: n <= editRating }"
-            @click="editRating = n"
-          >★</button>
+          <template v-else>
+            <div class="review-reactions-row">
+              <span class="rx-readonly">🤝 <span class="rx-badge">{{ r.agree_count || 0 }}</span></span>
+              <span class="rx-readonly">👎 <span class="rx-badge">{{ r.disagree_count || 0 }}</span></span>
+            </div>
+          </template>
         </div>
-        <textarea v-model="editComment" class="review-textarea" rows="2"></textarea>
-        <div class="edit-buttons-row">
-          <button class="btn-primary btn-save" @click="handleUpdateReview(r.id)">Guardar</button>
-          <button class="btn-secondary btn-cancel" @click="reviewEditandoId = null">Cancelar</button>
-        </div>
-      </div>
-    </template>
+      </template>
 
+      <template v-else>
+        <div class="review-form-edit">
+          <div class="stars-input">
+            <button
+              v-for="n in 5" :key="n"
+              class="star-btn"
+              :class="{ active: n <= editRating }"
+              @click="editRating = n"
+            >★</button>
+          </div>
+          <textarea v-model="editComment" class="review-textarea" rows="2"></textarea>
+          <div class="edit-buttons-row">
+            <button class="btn-primary btn-save" @click="handleUpdateReview(r.id)">Guardar</button>
+            <button class="btn-secondary btn-cancel" @click="reviewEditandoId = null">Cancelar</button>
+          </div>
+        </div>
+      </template>
+
+    </div>
   </div>
+  <p v-else class="no-providers">Todavía no hay opiniones para esta película.</p>
+
 </div>
-                <p v-else class="no-providers">Todavía no hay opiniones para esta película.</p>
-              </div>
 
             </div>
           </div>
@@ -298,6 +300,8 @@ const reviews      = ref([])
 const comment      = ref('')
 const rating       = ref(0)
 const isSubmitting = ref(false)
+const yaPublicó   = ref(false)
+const starWarning  = ref(false)
 const reviewEditandoId = ref(null) 
 const editComment      = ref('')
 const editRating       = ref(5)
@@ -392,17 +396,25 @@ async function fetchReviews(movieId) {
     
     // Mapeamos las reseñas asegurando que todas tengan estructura reactiva limpia en Vue
     reviews.value = data.map(r => ({
-      ...r,
-      agree_count: r.agree_count || 0,
-      disagree_count: r.disagree_count || 0,
-      user_voted: r.user_voted || null
-    }))
+     ...r,
+     agree_count: r.agree_count || 0,
+     disagree_count: r.disagree_count || 0,
+     user_voted: r.user_voted || null
+   }))
+  // Ocultar el formulario si el usuario ya publicó una reseña
+  yaPublicó.value = reviews.value.some(r => r.user_id === auth.user?.id)
   } catch (err) {
     console.error('Error al traer las opiniones:', err)
   }
 }
 
 async function handleSendReview() {
+  if (rating.value === 0) {
+    starWarning.value = true
+    setTimeout(() => starWarning.value = false, 3000)
+    return
+  }
+  starWarning.value = false
   if (!comment.value.trim()) return
   isSubmitting.value = true
   try {
@@ -411,10 +423,11 @@ async function handleSendReview() {
       rating:   rating.value,
       comment:  comment.value
     })
-    reviews.value.unshift(newReview)
-    comment.value = ''
-    rating.value  = 5
-    toast.show('Opinión publicada!', 'success')
+   reviews.value.unshift(newReview)
+   yaPublicó.value = true
+   comment.value = ''
+   rating.value  = 5
+   toast.show('Opinión publicada!', 'success')
   } catch (err) {
     toast.show(err.message, 'error')
   } finally {
@@ -457,6 +470,7 @@ async function handleDeleteReview(reviewId) {
     await api.deleteReview(reviewId)
     // Filtramos la lista local para remover la reseña borrada sin recargar la página
     reviews.value = reviews.value.filter(r => r.id !== reviewId)
+    yaPublicó.value = reviews.value.some(r => r.user_id === auth.user?.id)
     toast.show('Opinión eliminada', 'info')
   } catch (err) {
     toast.show(err.message, 'error')
@@ -977,5 +991,16 @@ function buscarCines() {
 .cines-actions {
   display: flex; gap: 8px;
   button { flex: 1; }
+}
+
+.star-warning {
+  font-size: 12px;
+  color: $gold;
+  background: rgba(255, 215, 0, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  border-radius: 6px;
+  padding: 6px 12px;
+  margin-top: 4px;
+  text-align: center;
 }
 </style>
