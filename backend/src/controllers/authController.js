@@ -130,7 +130,7 @@ const forgotPassword = async (req, res) => {
     const { Resend } = require('resend');
     const resend = new Resend(process.env.RESEND_API_KEY);
 
-    const resetLink = `http://localhost:5173/reset-password?token=${token}`;
+    const resetLink = `https://watchly-frontend-ujve.onrender.com/reset-password?token=${token}`;
 
     const result = await resend.emails.send({
       from: 'onboarding@resend.dev',

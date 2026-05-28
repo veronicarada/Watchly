@@ -104,7 +104,7 @@ async function handleLogin() {
 async function handleForgot() {
   loading.value = true
   try {
-    await fetch('http://localhost:3001/api/auth/forgot-password', {
+    await fetch('https://watchly-1.onrender.com/api/auth/forgot-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: forgotEmail.value })
