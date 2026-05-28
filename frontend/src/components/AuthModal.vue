@@ -9,12 +9,7 @@
           <button :class="['auth-tab', { active: modal.authTab === 'register' }]" @click="modal.authTab = 'register'">Registrarse</button>
         </div>
 
-        <!-- Google Button -->
-        <div class="google-btn" @click="handleGoogle">
-          <img src="https://www.google.com/favicon.ico" width="18" height="18" alt="Google"/>
-          Continuar con Google
-        </div>
-        <div class="divider"><span>o</span></div>
+    
 
         <!-- Login -->
         <form v-if="modal.authTab === 'login'" class="auth-form" @submit.prevent="handleLogin">
@@ -78,7 +73,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { useModalStore } from '@/stores/modal'
 import { useAuthStore }  from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
@@ -133,32 +128,6 @@ async function handleRegister() {
   } catch (err) { toast.show(err.message, 'error') }
   finally { loading.value = false }
 }
-
-// Google OAuth
-function handleGoogle() {
-  if (window.google) {
-    window.google.accounts.id.prompt()
-  } else {
-    toast.show('Google no está disponible', 'error')
-  }
-}
-
-onMounted(() => {
-  if (window.google && import.meta.env.VITE_GOOGLE_CLIENT_ID) {
-    window.google.accounts.id.initialize({
-      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-      callback: async ({ credential }) => {
-        try {
-          await auth.googleLogin(credential)
-          modal.closeAuth()
-          toast.show(`¡Bienvenido, ${auth.user.username}! 🎬`, 'success')
-          const pendingCode = localStorage.getItem('watchly_pending_join')
-          if (pendingCode) router.push(`/join/${pendingCode}`)
-        } catch (err) { toast.show(err.message, 'error') }
-      }
-    })
-  }
-})
 </script>
 
 <style lang="scss" scoped>
