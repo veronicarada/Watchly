@@ -1,9 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { OAuth2Client } = require('google-auth-library');
 const supabase = require('../config/supabase');
-
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const generateToken = (user) =>
   jwt.sign(
@@ -57,48 +54,6 @@ const login = async (req, res) => {
   }
 };
 
-// POST /api/auth/google  ← Google OAuth
-const googleLogin = async (req, res) => {
-  const { credential } = req.body;
-  if (!credential) return res.status(400).json({ error: 'Token de Google requerido' });
-
-  try {
-    // Verify Google token
-    const ticket = await googleClient.verifyIdToken({
-      idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID
-    });
-    const payload = ticket.getPayload();
-    const { email, name, picture, sub: googleId } = payload;
-
-    // Check if user exists
-    let { data: user } = await supabase
-      .from('users').select('*').eq('email', email).single();
-
-    if (!user) {
-      // Create new user from Google
-      const { data: newUser, error } = await supabase
-        .from('users')
-        .insert([{
-          username: name,
-          email,
-          password: await bcrypt.hash(googleId, 10), // dummy password
-          avatar: picture,
-          google_id: googleId
-        }])
-        .select('id, username, email, avatar').single();
-
-      if (error) throw error;
-      user = newUser;
-    }
-
-    const { password: _, ...safeUser } = user;
-    res.json({ token: generateToken(safeUser), user: safeUser });
-  } catch (err) {
-    console.error('Google auth error:', err);
-    res.status(401).json({ error: 'Error al autenticar con Google' });
-  }
-};
 // POST /api/auth/forgot-password
 // POST /api/auth/forgot-password
 const forgotPassword = async (req, res) => {
@@ -218,4 +173,4 @@ const updateProfile = async (req, res) => {
   }
 };
 
-module.exports = { register, login, googleLogin, forgotPassword, resetPassword, updateProfile };
+module.exports = { register, login, forgotPassword, resetPassword, updateProfile };

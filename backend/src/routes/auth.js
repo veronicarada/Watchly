@@ -1,7 +1,7 @@
 // routes/auth.js
 const express = require('express');
 const router = express.Router();
-const { register, login, googleLogin, forgotPassword, resetPassword, updateProfile } = require('../controllers/authController');
+const { register, login, forgotPassword, resetPassword, updateProfile } = require('../controllers/authController');
 const authMiddleware = require('../middleware/auth');
 
 /**
@@ -56,28 +56,6 @@ router.post('/register', register);
  */
 router.post('/login', login);
 
-/**
- * @swagger
- * /auth/google:
- *   post:
- *     summary: Iniciar sesión con Google
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               token:
- *                 type: string
- *     responses:
- *       200:
- *         description: Login con Google exitoso
- *       401:
- *         description: Token de Google inválido
- */
-router.post('/google', googleLogin);
 
 /**
  * @swagger
