@@ -106,7 +106,18 @@
               </div>
 
               <div class="modal-section reviews-section">
-               <h4>OPINIONES</h4>
+               <div class="reviews-header-row">
+  <h4>OPINIONES</h4>
+  <div v-if="averageRating" class="avg-rating-badge">
+    <span class="avg-stars">
+      <template v-for="n in 5" :key="n">
+        <span :class="n <= Math.round(Number(averageRating)) ? 'star-filled' : 'star-empty'">★</span>
+      </template>
+    </span>
+    <span class="avg-value">{{ averageRating }}</span>
+ <span class="avg-label">· {{ reviews.length }} {{ reviews.length === 1 ? 'opinión' : 'opiniones' }}</span>
+  </div>
+</div>
 
                <div v-if="auth.isLoggedIn && !yaPublicó" class="review-form">
                  <p class="review-hint">¿Viste esta película? Contanos qué te pareció y elegí cuántas estrellas le das.</p>
@@ -310,6 +321,12 @@ const ciudadCines = ref('')
 const selectedActor  = ref(null)
 const actorLoading   = ref(false)
 const showBio        = ref(false)
+// Promedio de estrellas de todas las reseñas visibles
+const averageRating = computed(() => {
+  if (!reviews.value.length) return null
+  const sum = reviews.value.reduce((acc, r) => acc + (r.rating || 0), 0)
+  return (sum / reviews.value.length).toFixed(1)
+})
 async function openActorDetail(actor) {
   selectedActor.value = null
   actorLoading.value  = true
@@ -1002,5 +1019,55 @@ function buscarCines() {
   padding: 6px 12px;
   margin-top: 4px;
   text-align: center;
+}
+
+.reviews-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+
+  h4 {
+    margin-bottom: 0;
+  }
+}
+
+.avg-rating-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba($gold, 0.08);
+  border: 1px solid rgba($gold, 0.25);
+  border-radius: 20px;
+  padding: 4px 12px;
+}
+
+.avg-stars {
+  display: flex;
+  gap: 1px;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.star-filled {
+  color: $gold;
+}
+
+.star-empty {
+  color: $text3;
+}
+
+.avg-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: $gold;
+  line-height: 1;
+}
+
+.avg-label {
+  font-size: 11px;
+  color: $text3;
 }
 </style>
