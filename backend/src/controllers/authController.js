@@ -81,22 +81,15 @@ const forgotPassword = async (req, res) => {
 
     if (insertError) throw insertError;
 
-    // Enviar email con nodemailer
-    const nodemailer = require('nodemailer');
-
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS
-  }
-});
+    // Enviar email con sendgrid
+    const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const resetLink = `https://watchly-frontend-ujve.onrender.com/reset-password?token=${token}`;
 
-await transporter.sendMail({
-  from: '"Watchly" <watchlymovie.app@gmail.com>',
+await sgMail.send({
   to: email,
+  from: 'martiarenavalentina21@gmail.com',
   subject: 'Recuperá tu contraseña - Watchly',
   html: `
     <h2>Recuperar contraseña</h2>
