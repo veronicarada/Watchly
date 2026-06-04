@@ -1137,5 +1137,5 @@ function buscarCines() {
 }
 .snack-btn.pedidoya { font-family: 'Arial Rounded MT Bold', Arial, sans-serif; }
 .snack-btn.rappi { font-family: 'Georgia', serif; font-style: italic; }
-.snack-btn.ubereats { font-family: 'Arial', sans-serif; font-weight: 500; }
+.snack-btn.ubereats { font-family: 'Arial', sans-serif; font-weight: 600; }
 </style>
