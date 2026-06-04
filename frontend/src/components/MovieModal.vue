@@ -68,12 +68,25 @@
                   <span v-if="!allProviders.length" class="no-providers">
                     No disponible en streaming actualmente
                   </span>
+                  <Transition name="snack-fade">
+  <div v-if="showSnackBanner" class="snack-banner">
+    <button class="snack-close" @click="showSnackBanner = false">✕</button>
+    <p class="snack-title">🍿 Que te lleven tus snacks favoritos</p>
+    <p class="snack-sub">Pochoclos, golosinas y bebidas — llegando mientras empieza la peli.</p>
+    <div class="snack-btns">
+      <a href="https://www.pedidoya.com.ar/buscar?q=snacks" target="_blank" class="snack-btn pedidoya">🛵 PedidoYa</a>
+      <a href="https://www.rappi.com.ar/buscar?query=pochoclos" target="_blank" class="snack-btn rappi">🛵 Rappi</a>
+      <a href="https://www.ubereats.com/ar/search?q=snacks" target="_blank" class="snack-btn ubereats">🛵 Uber Eats</a>
+    </div>
+  </div>
+</Transition>
                   <a v-for="prov in allProviders"
                     :key="prov.provider_id + prov.type"
                     class="provider-item"
                     :href="providerUrl(prov.provider_id)"
                     target="_blank"
                     :title="prov.provider_name"
+                    @click="handleProviderClick"
                   >
                     <img
                       :src="'https://image.tmdb.org/t/p/original' + prov.logo_path"
@@ -317,6 +330,7 @@ const reviewEditandoId = ref(null)
 const editComment      = ref('')
 const editRating       = ref(5)
 const showCinesPopup = ref(false)
+const showSnackBanner = ref(false)
 const ciudadCines = ref('')
 const selectedActor  = ref(null)
 const actorLoading   = ref(false)
@@ -403,6 +417,9 @@ function providerUrl(id) {
     'https://www.google.com/search?q=' + encodeURIComponent(movie.value?.title || '') + '+streaming+argentina'
 }
 
+function handleProviderClick() {
+  showSnackBanner.value = true
+}
 function shortName(id, fallback) {
   return PROVIDERS[id]?.name || fallback?.substring(0, 10) || '?'
 }
@@ -1070,4 +1087,39 @@ function buscarCines() {
   font-size: 11px;
   color: $text3;
 }
+
+.snack-banner {
+  width: 100%; margin: 12px 0;
+  background: linear-gradient(135deg, rgba(255,215,0,0.08), rgba(255,150,0,0.08));
+  border: 1px solid rgba(255,215,0,0.25);
+  border-radius: $radius; padding: 16px;
+  position: relative;
+}
+.snack-close {
+  position: absolute; top: 10px; right: 10px;
+  background: none; border: none; color: $text3;
+  cursor: pointer; font-size: 13px;
+  &:hover { color: $text; }
+}
+.snack-title {
+  font-size: 14px; font-weight: 700; color: $gold; margin-bottom: 4px;
+}
+.snack-sub {
+  font-size: 12px; color: $text2; margin-bottom: 12px;
+}
+.snack-btns {
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.snack-btn {
+  padding: 8px 16px; border-radius: 20px;
+  font-size: 12px; font-weight: 700;
+  text-decoration: none; transition: opacity 0.2s;
+  &:hover { opacity: 0.85; }
+  &.pedidoya { background: #FA0050; color: white; }
+  &.rappi { background: #FF441F; color: white; }
+  &.ubereats { background: #06C167; color: white; }
+}
+.snack-fade-enter-active, .snack-fade-leave-active { transition: opacity 0.3s ease; }
+.snack-fade-enter-from, .snack-fade-leave-to { opacity: 0; }
+
 </style>
