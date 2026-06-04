@@ -113,24 +113,13 @@
               <p v-if="voteMovie.overview">{{ voteMovie.overview.substring(0, 140) }}...</p>
               <p v-else>Esta es la elegida para hoy.</p>
               
-              <a :href="'https://www.justwatch.com/ar/buscar?q=' + encodeURIComponent(voteMovie.title)"
-                target="_blank"
-                class="btn-primary"
-                style="display: block; text-align: center; text-decoration: none; margin-top: 15px;">
-                VER EN PLATAFORMA
+              <a class="btn-primary"
+               style="display: block; text-align: center; text-decoration: none; margin-top: 15px; cursor: pointer;"
+               @click.prevent="handleGroupProviderClick('https://www.justwatch.com/ar/buscar?q=' + encodeURIComponent(voteMovie.title))"
+                >
+                  VER EN PLATAFORMA
               </a>
-              <Transition name="snack-fade">
-                <div v-if="showSnackBanner" class="snack-banner">
-                   <button class="snack-close" @click="showSnackBanner = false">✕</button>
-                  <p class="snack-title">🍿 Que te lleven tus snacks favoritos</p>
-                  <p class="snack-sub">Pochoclos, golosinas y bebidas — llegando mientras empieza la peli.</p>
-                  <div class="snack-btns">
-                   <a href="https://www.pedidoya.com.ar/buscar?q=snacks" target="_blank" class="snack-btn pedidoya">🛵 PedidoYa</a>
-                   <a href="https://www.rappi.com.ar/buscar?query=pochoclos" target="_blank" class="snack-btn rappi">🛵 Rappi</a>
-                   <a href="https://www.ubereats.com/ar/search?q=snacks" target="_blank" class="snack-btn ubereats">🛵 Uber Eats</a>
-                 </div>
-                </div>
-              </Transition>
+            
             </div>
           </div>
           <div v-else class="empty-voting">
@@ -190,6 +179,22 @@
       </div>
     </template>
   </div>
+  <Transition name="snack-fade">
+   <div v-if="showSnackPopup" class="snack-overlay">
+     <div class="snack-popup">
+       <button class="snack-close" @click="skipSnacks">✕</button>
+       <p class="snack-emoji">🍿</p>
+       <p class="snack-title">¡Elegí tu snack favorito!</p>
+       <p class="snack-sub">Pochoclos, golosinas, algo salado, algo dulce, algo para tomar... ¡que no falte nada!</p>
+       <div class="snack-btns">
+         <a class="snack-btn pedidoya" @click.prevent="goToDelivery('https://www.pedidoya.com.ar/ar/search?q=snacks')">🛵 PedidoYa</a>
+         <a class="snack-btn rappi" @click.prevent="goToDelivery('https://www.rappi.com.ar/buscar?query=snacks')">🛵 Rappi</a>
+         <a class="snack-btn ubereats" @click.prevent="goToDelivery('https://www.ubereats.com/ar/search?q=snacks')">🛵 Uber Eats</a>
+       </div>
+       <button class="snack-skip" @click="skipSnacks">No gracias, ir a la plataforma</button>
+     </div>
+   </div>
+ </Transition>
 </template>
 
 <script setup>
@@ -321,7 +326,9 @@ const searchQuery = ref('')
 const searchResults = ref([])
 const isSearching = ref(false)
 const currentVoteIndex = ref(0)
-const showSnackBanner = ref(false)
+const showSnackPopup = ref(false)
+const pendingProviderUrl = ref('')
+
 
 const colors = ['#FFD700', '#FF6B6B', '#4ECDC4', '#A29BFE', '#FD79A8']
 const IMG_BASE = 'https://image.tmdb.org/t/p/w500'
@@ -360,7 +367,7 @@ async function refreshGroupStatus() {
     if (data.active_movie_id) {
      if (!voteMovie.value || voteMovie.value.id !== data.active_movie_id) {
       voteMovie.value = await api.movieDetail(data.active_movie_id)
-      showSnackBanner.value = true
+     
      }
     } else {
       voteMovie.value = null
@@ -460,6 +467,23 @@ async function triggerTieBreaker() {
     currentGroup.value = await api.resolveTieBreaker(currentGroup.value.code)
     toast.show('🎲 El azar decidió.', 'success')
   } catch (err) { toast.show(err.message, 'error') }
+}
+function handleGroupProviderClick(url) {
+  pendingProviderUrl.value = url
+  showSnackPopup.value = true
+}
+
+function goToDelivery(deliveryUrl) {
+  window.open(deliveryUrl, '_blank')
+  window.open(pendingProviderUrl.value, '_blank')
+  showSnackPopup.value = false
+  pendingProviderUrl.value = ''
+}
+
+function skipSnacks() {
+  window.open(pendingProviderUrl.value, '_blank')
+  showSnackPopup.value = false
+  pendingProviderUrl.value = ''
 }
 
 function leaveGroup() {
@@ -608,38 +632,49 @@ function copyInviteLink() {
 }
 .chat-send { background: $gold; color: #000; border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; &:hover { opacity: 0.85; } }
 
-.snack-banner {
-  width: 100%; margin-top: 16px;
-  background: linear-gradient(135deg, rgba(255,215,0,0.08), rgba(255,150,0,0.08));
-  border: 1px solid rgba(255,215,0,0.25);
-  border-radius: $radius; padding: 16px;
-  position: relative;
+.snack-overlay {
+  position: fixed; inset: 0; z-index: 999;
+  background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.snack-popup {
+  background: $bg2; border: 1px solid rgba(255,215,0,0.3);
+  border-radius: 20px; padding: 32px 28px; max-width: 380px; width: 100%;
+  text-align: center; position: relative;
 }
 .snack-close {
-  position: absolute; top: 10px; right: 10px;
+  position: absolute; top: 14px; right: 14px;
   background: none; border: none; color: $text3;
-  cursor: pointer; font-size: 13px;
+  cursor: pointer; font-size: 16px;
   &:hover { color: $text; }
 }
+.snack-emoji { font-size: 48px; margin-bottom: 8px; }
 .snack-title {
-  font-size: 14px; font-weight: 700; color: $gold; margin-bottom: 4px;
+  font-family: $font-display; font-size: 22px; color: $gold;
+  letter-spacing: 1px; margin-bottom: 8px;
 }
 .snack-sub {
-  font-size: 12px; color: $text2; margin-bottom: 12px;
+  font-size: 13px; color: $text2; line-height: 1.6; margin-bottom: 20px;
 }
 .snack-btns {
-  display: flex; gap: 8px; flex-wrap: wrap;
+  display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;
 }
 .snack-btn {
-  padding: 8px 16px; border-radius: 20px;
-  font-size: 12px; font-weight: 700;
-  text-decoration: none; transition: opacity 0.2s;
+  padding: 12px 20px; border-radius: 12px;
+  font-size: 14px; font-weight: 700;
+  text-decoration: none; cursor: pointer;
+  transition: opacity 0.2s; display: block;
   &:hover { opacity: 0.85; }
   &.pedidoya { background: #FA0050; color: white; }
   &.rappi { background: #FF441F; color: white; }
   &.ubereats { background: #06C167; color: white; }
 }
-.snack-fade-enter-active, .snack-fade-leave-active { transition: opacity 0.3s ease; }
+.snack-skip {
+  background: none; border: none; color: $text3;
+  font-size: 12px; cursor: pointer; font-family: $font-body;
+  text-decoration: underline;
+  &:hover { color: $text; }
+}
+.snack-fade-enter-active, .snack-fade-leave-active { transition: opacity 0.25s ease; }
 .snack-fade-enter-from, .snack-fade-leave-to { opacity: 0; }
-
 </style>

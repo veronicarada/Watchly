@@ -27,14 +27,14 @@
               <span v-if="movie.media_type === 'tv'" class="media-badge">📺 Serie</span>
               <p v-if="movie.tagline" class="modal-tagline">"{{ movie.tagline }}"</p>
               <div class="modal-meta">
-<a href="https://www.themoviedb.org" target="_blank" class="rating-badge tmdb-rating" title="Puntuación de TMDb">
-  <img 
-    src="https://www.themoviedb.org/assets/2/v4/logos/v2/blue_square_2-d537fb228cf3ded904ef09b136fe3fec72548ebc1fea3fbbd1ad9e36364db38b.svg" 
-    alt="TMDb" 
-    class="tmdb-logo"
-  />
-  <span>★ {{ movie.vote_average?.toFixed(1) }}</span>
-</a>
+                <a href="https://www.themoviedb.org" target="_blank" class="rating-badge tmdb-rating" title="Puntuación de TMDb">
+                  <img
+                    src="https://www.themoviedb.org/assets/2/v4/logos/v2/blue_square_2-d537fb228cf3ded904ef09b136fe3fec72548ebc1fea3fbbd1ad9e36364db38b.svg"
+                    alt="TMDb"
+                    class="tmdb-logo"
+                  />
+                  <span>★ {{ movie.vote_average?.toFixed(1) }}</span>
+                </a>
                 <span>{{ year }}</span>
                 <span>{{ movie.runtime ? movie.runtime + ' min' : (movie.episode_run_time?.[0] ? movie.episode_run_time[0] + ' min/ep' : '—') }}</span>
               </div>
@@ -43,22 +43,22 @@
               <div v-if="movie.cast && movie.cast.length" class="modal-section">
                 <h4>ELENCO</h4>
                 <div class="cast-row">
-                <div
-  v-for="actor in movie.cast"
-  :key="actor.id"
-  class="cast-item clickable"
-  @click="openActorDetail(actor)"
->
-  <img
-    :src="actor.profile_path
-      ? 'https://image.tmdb.org/t/p/w185' + actor.profile_path
-      : 'https://via.placeholder.com/60x60/1a1a2e/FFD700?text=?'"
-    :alt="actor.name"
-    class="cast-photo"
-  />
-  <span class="cast-name">{{ actor.name }}</span>
-  <span class="cast-character">{{ actor.character }}</span>
-</div> 
+                  <div
+                    v-for="actor in movie.cast"
+                    :key="actor.id"
+                    class="cast-item clickable"
+                    @click="openActorDetail(actor)"
+                  >
+                    <img
+                      :src="actor.profile_path
+                        ? 'https://image.tmdb.org/t/p/w185' + actor.profile_path
+                        : 'https://via.placeholder.com/60x60/1a1a2e/FFD700?text=?'"
+                      :alt="actor.name"
+                      class="cast-photo"
+                    />
+                    <span class="cast-name">{{ actor.name }}</span>
+                    <span class="cast-character">{{ actor.character }}</span>
+                  </div>
                 </div>
               </div>
 
@@ -68,25 +68,13 @@
                   <span v-if="!allProviders.length" class="no-providers">
                     No disponible en streaming actualmente
                   </span>
-                  <Transition name="snack-fade">
-  <div v-if="showSnackBanner" class="snack-banner">
-    <button class="snack-close" @click="showSnackBanner = false">✕</button>
-    <p class="snack-title">🍿 Que te lleven tus snacks favoritos</p>
-    <p class="snack-sub">Pochoclos, golosinas y bebidas — llegando mientras empieza la peli.</p>
-    <div class="snack-btns">
-      <a href="https://www.pedidoya.com.ar/buscar?q=snacks" target="_blank" class="snack-btn pedidoya">🛵 PedidoYa</a>
-      <a href="https://www.rappi.com.ar/buscar?query=pochoclos" target="_blank" class="snack-btn rappi">🛵 Rappi</a>
-      <a href="https://www.ubereats.com/ar/search?q=snacks" target="_blank" class="snack-btn ubereats">🛵 Uber Eats</a>
-    </div>
-  </div>
-</Transition>
                   <a v-for="prov in allProviders"
                     :key="prov.provider_id + prov.type"
                     class="provider-item"
                     :href="providerUrl(prov.provider_id)"
                     target="_blank"
                     :title="prov.provider_name"
-                    @click="handleProviderClick"
+                    @click="handleProviderClick($event, prov.provider_id)"
                   >
                     <img
                       :src="'https://image.tmdb.org/t/p/original' + prov.logo_path"
@@ -105,202 +93,189 @@
                   {{ isFav ? 'GUARDADA' : 'GUARDAR' }}
                 </button>
                 <button class="btn-watched" :class="{ active: isWatched }" @click="toggleWatched">
-                 {{ isWatched ? '✅ Vista' : '👁 Marcar como vista' }}
+                  {{ isWatched ? '✅ Vista' : '👁 Marcar como vista' }}
                 </button>
-              <button v-if="isInCines" class="btn-secondary" @click="showCinesPopup = true">📍 Ver en cines</button>
-               <div v-if="showCinesPopup" class="cines-popup">
-                <p>¿En qué ciudad querés ver la película?</p>
-                <input v-model="ciudadCines" type="text" placeholder="Ej: Pilar, Buenos Aires" class="cines-input"/>
-                <div class="cines-actions">
-                 <button class="btn-primary" @click="buscarCines">Buscar</button>
-                <button class="btn-secondary" @click="showCinesPopup = false">Cancelar</button>
-               </div>
-               </div>
+                <button v-if="isInCines" class="btn-secondary" @click="showCinesPopup = true">📍 Ver en cines</button>
+                <div v-if="showCinesPopup" class="cines-popup">
+                  <p>¿En qué ciudad querés ver la película?</p>
+                  <input v-model="ciudadCines" type="text" placeholder="Ej: Pilar, Buenos Aires" class="cines-input"/>
+                  <div class="cines-actions">
+                    <button class="btn-primary" @click="buscarCines">Buscar</button>
+                    <button class="btn-secondary" @click="showCinesPopup = false">Cancelar</button>
+                  </div>
+                </div>
               </div>
 
               <div class="modal-section reviews-section">
-               <div class="reviews-header-row">
-  <h4>OPINIONES</h4>
-  <div v-if="averageRating" class="avg-rating-badge">
-    <span class="avg-stars">
-      <template v-for="n in 5" :key="n">
-        <span :class="n <= Math.round(Number(averageRating)) ? 'star-filled' : 'star-empty'">★</span>
-      </template>
-    </span>
-    <span class="avg-value">{{ averageRating }}</span>
- <span class="avg-label">· {{ reviews.length }} {{ reviews.length === 1 ? 'opinión' : 'opiniones' }}</span>
-  </div>
-</div>
-
-               <div v-if="auth.isLoggedIn && !yaPublicó" class="review-form">
-                 <p class="review-hint">¿Viste esta película? Contanos qué te pareció y elegí cuántas estrellas le das.</p>
-                 <div class="stars-input">
-                   <button
-                     v-for="n in 5" :key="n"
-                     class="star-btn"
-                     :class="{ active: n <= rating }"
-                     @click="rating = (rating === n ? 0 : n)"
-                   >★</button>
+                <div class="reviews-header-row">
+                  <h4>OPINIONES</h4>
+                  <div v-if="averageRating" class="avg-rating-badge">
+                    <span class="avg-stars">
+                      <template v-for="n in 5" :key="n">
+                        <span :class="n <= Math.round(Number(averageRating)) ? 'star-filled' : 'star-empty'">★</span>
+                      </template>
+                    </span>
+                    <span class="avg-value">{{ averageRating }}</span>
+                    <span class="avg-label">· {{ reviews.length }} {{ reviews.length === 1 ? 'opinión' : 'opiniones' }}</span>
+                  </div>
                 </div>
-                <textarea
-                  v-model="comment"
-                 placeholder="Escribí tu opinión..."
-                  class="review-textarea"
-                 rows="2"
-               ></textarea>
-               <button class="btn-primary" :disabled="isSubmitting || !comment.trim()" @click="handleSendReview">
-                {{ isSubmitting ? 'Publicando...' : 'Publicar opinión' }}
-               </button>
-               <p v-if="starWarning" class="star-warning">
-               ⭐ Elegí cuántas estrellas le das antes de publicar
-               </p>
-             </div>
 
-             <p v-else-if="!auth.isLoggedIn" class="no-providers">
-              <button class="link-btn" @click="modal.openAuth('login')">Iniciá sesión</button> para dejar tu opinión
-             </p>
+                <div v-if="auth.isLoggedIn && !yaPublicó" class="review-form">
+                  <p class="review-hint">¿Viste esta película? Contanos qué te pareció y elegí cuántas estrellas le das.</p>
+                  <div class="stars-input">
+                    <button
+                      v-for="n in 5" :key="n"
+                      class="star-btn"
+                      :class="{ active: n <= rating }"
+                      @click="rating = (rating === n ? 0 : n)"
+                    >★</button>
+                  </div>
+                  <textarea
+                    v-model="comment"
+                    placeholder="Escribí tu opinión..."
+                    class="review-textarea"
+                    rows="2"
+                  ></textarea>
+                  <button class="btn-primary" :disabled="isSubmitting || !comment.trim()" @click="handleSendReview">
+                    {{ isSubmitting ? 'Publicando...' : 'Publicar opinión' }}
+                  </button>
+                  <p v-if="starWarning" class="star-warning">
+                    ⭐ Elegí cuántas estrellas le das antes de publicar
+                  </p>
+                </div>
 
-             <div v-if="reviews.length" class="reviews-list">
-              <div v-for="r in reviews" :key="r.id" class="review-item">
+                <p v-else-if="!auth.isLoggedIn" class="no-providers">
+                  <button class="link-btn" @click="modal.openAuth('login')">Iniciá sesión</button> para dejar tu opinión
+                </p>
 
-                <template v-if="reviewEditandoId !== r.id">
-                 <div class="review-header">
-                    <span class="review-user">{{ r.user_username || r.user_email?.split('@')[0] }}</span>
-                   <span class="review-stars">{{ '★'.repeat(r.rating) }}{{ '☆'.repeat(5 - r.rating) }}</span>
-                 </div>
-                 <p class="review-comment">{{ r.comment }}</p>
-
-                 <div class="review-footer-actions">
-                   <template v-if="auth.isLoggedIn && auth.user?.id === r.user_id">
-                    <div class="review-reactions-row">
-                     <span class="rx-readonly" :class="{ active: r.agree_count > 0 }">
-                      🤝 Concuerdo <span class="rx-badge">{{ r.agree_count || 0 }}</span>
-                     </span>
-                     <span class="rx-readonly" :class="{ active: r.disagree_count > 0 }">
-                      👎 Desacuerdo <span class="rx-badge">{{ r.disagree_count || 0 }}</span>
-                     </span>
-                     <button class="btn-action-edit" @click="habilitarEdicion(r)">✏️ Editar</button>
-                     <button class="btn-action-delete" @click="handleDeleteReview(r.id)">🗑️ Eliminar</button>
-                    </div>
-                   </template>
-
-          <template v-else-if="auth.isLoggedIn">
-            <div class="review-reactions-row">
-              <button
-                class="rx-btn agree"
-                :class="{ active: r.user_voted === 'agree' }"
-                @click="handleReactReview(r, 'agree')"
-              >
-                🤝 Concuerdo <span class="rx-badge">{{ r.agree_count || 0 }}</span>
-              </button>
-              <button
-                class="rx-btn disagree"
-                :class="{ active: r.user_voted === 'disagree' }"
-                @click="handleReactReview(r, 'disagree')"
-              >
-                👎 Desacuerdo <span class="rx-badge">{{ r.disagree_count || 0 }}</span>
-              </button>
-            </div>
-          </template>
-
-          <template v-else>
-            <div class="review-reactions-row">
-              <span class="rx-readonly">🤝 <span class="rx-badge">{{ r.agree_count || 0 }}</span></span>
-              <span class="rx-readonly">👎 <span class="rx-badge">{{ r.disagree_count || 0 }}</span></span>
-            </div>
-          </template>
-        </div>
-      </template>
-
-      <template v-else>
-        <div class="review-form-edit">
-          <div class="stars-input">
-            <button
-              v-for="n in 5" :key="n"
-              class="star-btn"
-              :class="{ active: n <= editRating }"
-              @click="editRating = n"
-            >★</button>
-          </div>
-          <textarea v-model="editComment" class="review-textarea" rows="2"></textarea>
-          <div class="edit-buttons-row">
-            <button class="btn-primary btn-save" @click="handleUpdateReview(r.id)">Guardar</button>
-            <button class="btn-secondary btn-cancel" @click="reviewEditandoId = null">Cancelar</button>
-          </div>
-        </div>
-      </template>
-
-    </div>
-  </div>
-  <p v-else class="no-providers">Todavía no hay opiniones para esta película.</p>
-
-</div>
+                <div v-if="reviews.length" class="reviews-list">
+                  <div v-for="r in reviews" :key="r.id" class="review-item">
+                    <template v-if="reviewEditandoId !== r.id">
+                      <div class="review-header">
+                        <span class="review-user">{{ r.user_username || r.user_email?.split('@')[0] }}</span>
+                        <span class="review-stars">{{ '★'.repeat(r.rating) }}{{ '☆'.repeat(5 - r.rating) }}</span>
+                      </div>
+                      <p class="review-comment">{{ r.comment }}</p>
+                      <div class="review-footer-actions">
+                        <template v-if="auth.isLoggedIn && auth.user?.id === r.user_id">
+                          <div class="review-reactions-row">
+                            <span class="rx-readonly" :class="{ active: r.agree_count > 0 }">
+                              🤝 Concuerdo <span class="rx-badge">{{ r.agree_count || 0 }}</span>
+                            </span>
+                            <span class="rx-readonly" :class="{ active: r.disagree_count > 0 }">
+                              👎 Desacuerdo <span class="rx-badge">{{ r.disagree_count || 0 }}</span>
+                            </span>
+                            <button class="btn-action-edit" @click="habilitarEdicion(r)">✏️ Editar</button>
+                            <button class="btn-action-delete" @click="handleDeleteReview(r.id)">🗑️ Eliminar</button>
+                          </div>
+                        </template>
+                        <template v-else-if="auth.isLoggedIn">
+                          <div class="review-reactions-row">
+                            <button class="rx-btn agree" :class="{ active: r.user_voted === 'agree' }" @click="handleReactReview(r, 'agree')">
+                              🤝 Concuerdo <span class="rx-badge">{{ r.agree_count || 0 }}</span>
+                            </button>
+                            <button class="rx-btn disagree" :class="{ active: r.user_voted === 'disagree' }" @click="handleReactReview(r, 'disagree')">
+                              👎 Desacuerdo <span class="rx-badge">{{ r.disagree_count || 0 }}</span>
+                            </button>
+                          </div>
+                        </template>
+                        <template v-else>
+                          <div class="review-reactions-row">
+                            <span class="rx-readonly">🤝 <span class="rx-badge">{{ r.agree_count || 0 }}</span></span>
+                            <span class="rx-readonly">👎 <span class="rx-badge">{{ r.disagree_count || 0 }}</span></span>
+                          </div>
+                        </template>
+                      </div>
+                    </template>
+                    <template v-else>
+                      <div class="review-form-edit">
+                        <div class="stars-input">
+                          <button
+                            v-for="n in 5" :key="n"
+                            class="star-btn"
+                            :class="{ active: n <= editRating }"
+                            @click="editRating = n"
+                          >★</button>
+                        </div>
+                        <textarea v-model="editComment" class="review-textarea" rows="2"></textarea>
+                        <div class="edit-buttons-row">
+                          <button class="btn-primary btn-save" @click="handleUpdateReview(r.id)">Guardar</button>
+                          <button class="btn-secondary btn-cancel" @click="reviewEditandoId = null">Cancelar</button>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+                <p v-else class="no-providers">Todavía no hay opiniones para esta película.</p>
+              </div>
 
             </div>
           </div>
         </template>
       </div>
     </div>
+
     <Transition name="actor-slide">
-  <div v-if="selectedActor || actorLoading" class="actor-overlay" @click.self="selectedActor = null">
-    <div class="actor-panel">
-      <button class="actor-close" @click="selectedActor = null">✕</button>
-
-      <div v-if="actorLoading" class="loading-dots" style="padding:60px">
-        <span></span><span></span><span></span>
-      </div>
-
-      <template v-else-if="selectedActor">
-        <div class="actor-header">
-          <img
-            :src="selectedActor.profile_path
-              ? 'https://image.tmdb.org/t/p/w185' + selectedActor.profile_path
-              : 'https://via.placeholder.com/100x150/1a1a2e/FFD700?text=?'"
-            :alt="selectedActor.name"
-            class="actor-profile-img"
-          />
-          <div class="actor-info">
-            <h3 class="actor-name">{{ selectedActor.name }}</h3>
-            <p v-if="selectedActor.birthday" class="actor-meta">
-              🎂 {{ selectedActor.birthday }}
-            </p>
-            <p v-if="selectedActor.place_of_birth" class="actor-meta">
-              📍 {{ selectedActor.place_of_birth }}
-            </p>
+      <div v-if="selectedActor || actorLoading" class="actor-overlay" @click.self="selectedActor = null">
+        <div class="actor-panel">
+          <button class="actor-close" @click="selectedActor = null">✕</button>
+          <div v-if="actorLoading" class="loading-dots" style="padding:60px">
+            <span></span><span></span><span></span>
           </div>
-        </div>
-
-        <div v-if="selectedActor.biography" class="actor-bio-section">
-          <p class="actor-bio" :class="{ expanded: showBio }">
-            {{ selectedActor.biography }}
-          </p>
-          <button class="bio-toggle" @click="showBio = !showBio">
-            {{ showBio ? 'Ver menos ▲' : 'Ver más ▼' }}
-          </button>
-        </div>
-
-        <div v-if="selectedActor.known_for?.length" class="actor-known">
-          <h4>CONOCIDO/A POR</h4>
-          <div class="known-row">
-            <div
-              v-for="item in selectedActor.known_for"
-              :key="item.id"
-              class="known-item"
-            >
+          <template v-else-if="selectedActor">
+            <div class="actor-header">
               <img
-                :src="'https://image.tmdb.org/t/p/w92' + item.poster_path"
-                :alt="item.title"
-                class="known-poster"
+                :src="selectedActor.profile_path
+                  ? 'https://image.tmdb.org/t/p/w185' + selectedActor.profile_path
+                  : 'https://via.placeholder.com/100x150/1a1a2e/FFD700?text=?'"
+                :alt="selectedActor.name"
+                class="actor-profile-img"
               />
-              <span class="known-title">{{ item.title }}</span>
-              <span class="known-year">{{ item.year }}</span>
+              <div class="actor-info">
+                <h3 class="actor-name">{{ selectedActor.name }}</h3>
+                <p v-if="selectedActor.birthday" class="actor-meta">🎂 {{ selectedActor.birthday }}</p>
+                <p v-if="selectedActor.place_of_birth" class="actor-meta">📍 {{ selectedActor.place_of_birth }}</p>
+              </div>
             </div>
-          </div>
+            <div v-if="selectedActor.biography" class="actor-bio-section">
+              <p class="actor-bio" :class="{ expanded: showBio }">{{ selectedActor.biography }}</p>
+              <button class="bio-toggle" @click="showBio = !showBio">
+                {{ showBio ? 'Ver menos ▲' : 'Ver más ▼' }}
+              </button>
+            </div>
+            <div v-if="selectedActor.known_for?.length" class="actor-known">
+              <h4>CONOCIDO/A POR</h4>
+              <div class="known-row">
+                <div v-for="item in selectedActor.known_for" :key="item.id" class="known-item">
+                  <img :src="'https://image.tmdb.org/t/p/w92' + item.poster_path" :alt="item.title" class="known-poster"/>
+                  <span class="known-title">{{ item.title }}</span>
+                  <span class="known-year">{{ item.year }}</span>
+                </div>
+              </div>
+            </div>
+          </template>
         </div>
-      </template>
-    </div>
-  </div>
-</Transition>
+      </div>
+    </Transition>
+
+    <!-- POPUP SNACKS -->
+    <Transition name="snack-fade">
+      <div v-if="showSnackPopup" class="snack-overlay">
+        <div class="snack-popup">
+          <button class="snack-close" @click="skipSnacks">✕</button>
+          <p class="snack-emoji">🍿</p>
+          <p class="snack-title">¡Elegí tu snack favorito!</p>
+          <p class="snack-sub">Pochoclos, golosinas, algo salado, algo dulce, algo para tomar... ¡que no falte nada!</p>
+          <div class="snack-btns">
+            <a class="snack-btn pedidoya" @click.prevent="goToDelivery('https://www.pedidoya.com.ar/ar/search?q=snacks')">🛵 PedidoYa</a>
+            <a class="snack-btn rappi" @click.prevent="goToDelivery('https://www.rappi.com.ar/buscar?query=snacks')">🛵 Rappi</a>
+            <a class="snack-btn ubereats" @click.prevent="goToDelivery('https://www.ubereats.com/ar/search?q=snacks')">🛵 Uber Eats</a>
+          </div>
+          <button class="snack-skip" @click="skipSnacks">No gracias, ir a la plataforma</button>
+        </div>
+      </div>
+    </Transition>
+
   </Teleport>
 </template>
 
@@ -330,8 +305,9 @@ const reviewEditandoId = ref(null)
 const editComment      = ref('')
 const editRating       = ref(5)
 const showCinesPopup = ref(false)
-const showSnackBanner = ref(false)
 const ciudadCines = ref('')
+const showSnackPopup = ref(false)
+const pendingProviderUrl = ref('')
 const selectedActor  = ref(null)
 const actorLoading   = ref(false)
 const showBio        = ref(false)
@@ -417,9 +393,25 @@ function providerUrl(id) {
     'https://www.google.com/search?q=' + encodeURIComponent(movie.value?.title || '') + '+streaming+argentina'
 }
 
-function handleProviderClick() {
-  showSnackBanner.value = true
+function handleProviderClick(event, id) {
+  event.preventDefault()
+  pendingProviderUrl.value = providerUrl(id)
+  showSnackPopup.value = true
 }
+
+function goToDelivery(deliveryUrl) {
+  window.open(deliveryUrl, '_blank')
+  window.open(pendingProviderUrl.value, '_blank')
+  showSnackPopup.value = false
+  pendingProviderUrl.value = ''
+}
+
+function skipSnacks() {
+  window.open(pendingProviderUrl.value, '_blank')
+  showSnackPopup.value = false
+  pendingProviderUrl.value = ''
+}
+
 function shortName(id, fallback) {
   return PROVIDERS[id]?.name || fallback?.substring(0, 10) || '?'
 }
@@ -1088,38 +1080,50 @@ function buscarCines() {
   color: $text3;
 }
 
-.snack-banner {
-  width: 100%; margin: 12px 0;
-  background: linear-gradient(135deg, rgba(255,215,0,0.08), rgba(255,150,0,0.08));
-  border: 1px solid rgba(255,215,0,0.25);
-  border-radius: $radius; padding: 16px;
-  position: relative;
+.snack-overlay {
+  position: fixed; inset: 0; z-index: 999;
+  background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.snack-popup {
+  background: $bg2; border: 1px solid rgba(255,215,0,0.3);
+  border-radius: 20px; padding: 32px 28px; max-width: 380px; width: 100%;
+  text-align: center; position: relative;
 }
 .snack-close {
-  position: absolute; top: 10px; right: 10px;
+  position: absolute; top: 14px; right: 14px;
   background: none; border: none; color: $text3;
-  cursor: pointer; font-size: 13px;
+  cursor: pointer; font-size: 16px;
   &:hover { color: $text; }
 }
+.snack-emoji { font-size: 48px; margin-bottom: 8px; }
 .snack-title {
-  font-size: 14px; font-weight: 700; color: $gold; margin-bottom: 4px;
+  font-family: $font-display; font-size: 22px; color: $gold;
+  letter-spacing: 1px; margin-bottom: 8px;
 }
 .snack-sub {
-  font-size: 12px; color: $text2; margin-bottom: 12px;
+  font-size: 13px; color: $text2; line-height: 1.6; margin-bottom: 20px;
 }
 .snack-btns {
-  display: flex; gap: 8px; flex-wrap: wrap;
+  display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;
 }
 .snack-btn {
-  padding: 8px 16px; border-radius: 20px;
-  font-size: 12px; font-weight: 700;
-  text-decoration: none; transition: opacity 0.2s;
+  padding: 12px 20px; border-radius: 12px;
+  font-size: 14px; font-weight: 700;
+  text-decoration: none; cursor: pointer;
+  transition: opacity 0.2s; display: block;
   &:hover { opacity: 0.85; }
   &.pedidoya { background: #FA0050; color: white; }
   &.rappi { background: #FF441F; color: white; }
   &.ubereats { background: #06C167; color: white; }
 }
-.snack-fade-enter-active, .snack-fade-leave-active { transition: opacity 0.3s ease; }
+.snack-skip {
+  background: none; border: none; color: $text3;
+  font-size: 12px; cursor: pointer; font-family: $font-body;
+  text-decoration: underline;
+  &:hover { color: $text; }
+}
+.snack-fade-enter-active, .snack-fade-leave-active { transition: opacity 0.25s ease; }
 .snack-fade-enter-from, .snack-fade-leave-to { opacity: 0; }
 
 </style>
