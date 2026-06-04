@@ -1120,7 +1120,7 @@ function buscarCines() {
   &:hover { opacity: 0.85; }
   &.pedidoya { background: #FA0050; color: white; }
   &.rappi { background: #FF441F; color: white; }
-  &.ubereats { background: #059652; color: rgb(3, 3, 3); }
+  &.ubereats { background: #1a7a45; color: white; }
 }
 .snack-skip {
   background: none; border: none; color: $text3;
@@ -1137,5 +1137,5 @@ function buscarCines() {
 }
 .snack-btn.pedidoya { font-family: 'Arial Rounded MT Bold', Arial, sans-serif; }
 .snack-btn.rappi { font-family: 'Georgia', serif; font-style: italic; }
-.snack-btn.ubereats { font-family: 'Arial', sans-serif; font-weight: 400; }
+.snack-btn.ubereats { font-family: 'Arial', sans-serif; font-weight: 500; }
 </style>

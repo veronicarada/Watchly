@@ -672,7 +672,7 @@ function copyInviteLink() {
   &:hover { opacity: 0.85; }
   &.pedidoya { background: #E52243; color: #FFFFFF; }
   &.rappi { background: #FF6B00; color: #ffffff; }
-  &.ubereats { background: #059652; color: rgb(8, 8, 8); }
+  &.ubereats { background: #1a7a45; color: white; }
 }
 .snack-skip {
   background: none; border: none; color: $text3;
@@ -690,6 +690,6 @@ function copyInviteLink() {
 }
 .snack-btn.pedidoya { font-family: 'Arial Rounded MT Bold', Arial, sans-serif; }
 .snack-btn.rappi { font-family: 'Georgia', serif; font-style: italic; }
-.snack-btn.ubereats { font-family: 'Arial', sans-serif; font-weight: 400; }
+.snack-btn.ubereats { font-family: 'Arial', sans-serif; font-weight: 500; }
 
 </style>
