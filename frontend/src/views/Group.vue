@@ -480,13 +480,9 @@ function handleGroupProviderClick(url) {
 }
 
 function goToDelivery(deliveryUrl) {
-  const platform = pendingProviderUrl.value
   showSnackPopup.value = false
   pendingProviderUrl.value = ''
-  window.open(platform, '_blank')
-  setTimeout(() => {
-    window.open(deliveryUrl, '_blank')
-  }, 300)
+  window.open(deliveryUrl, '_blank')
 }
 
 function skipSnacks() {
