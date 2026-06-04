@@ -182,7 +182,7 @@
   <Transition name="snack-fade">
    <div v-if="showSnackPopup" class="snack-overlay">
      <div class="snack-popup">
-       <button class="snack-close" @click="skipSnacks">✕</button>
+      
        <p class="snack-emoji">🍿</p>
        <p class="snack-title">¡Elegí tu snack favorito!</p>
        <p class="snack-sub">Pochoclos, golosinas, algo salado, algo dulce, algo para tomar... ¡que no falte nada!</p>
@@ -197,7 +197,7 @@
              <span class="snack-btn-icon"></span> Uber Eats
            </a>
        </div>
-       <button class="snack-skip" @click="skipSnacks">No gracias, ir a la plataforma</button>
+       <button class="snack-skip" @click="skipSnacks">→ Ir a la plataforma</button>
      </div>
    </div>
  </Transition>
@@ -675,10 +675,10 @@ function copyInviteLink() {
   &.ubereats { background: #1a7a45; color: white; }
 }
 .snack-skip {
-  background: none; border: none; color: $text3;
-  font-size: 12px; cursor: pointer; font-family: $font-body;
+  background: none; border: none; color: white;
+  font-size: 14px; cursor: pointer; font-family: $font-body;
   text-decoration: underline;
-  &:hover { color: $text; }
+  &:hover { color: $gold; }
 }
 .snack-fade-enter-active, .snack-fade-leave-active { transition: opacity 0.25s ease; }
 .snack-fade-enter-from, .snack-fade-leave-to { opacity: 0; }
