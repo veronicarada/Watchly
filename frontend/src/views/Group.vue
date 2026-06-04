@@ -194,7 +194,7 @@
              <span class="snack-btn-icon"></span> Rappi
            </a>
            <a class="snack-btn ubereats" @click.prevent="goToDelivery('https://www.ubereats.com/ar/search?q=snacks')">
-             <span class="snack-btn-icon">🍴</span> Uber Eats
+             <span class="snack-btn-icon"></span> Uber Eats
            </a>
        </div>
        <button class="snack-skip" @click="skipSnacks">No gracias, ir a la plataforma</button>
@@ -672,7 +672,7 @@ function copyInviteLink() {
   &:hover { opacity: 0.85; }
   &.pedidoya { background: #E52243; color: #FFFFFF; }
   &.rappi { background: #FF6B00; color: #ffffff; }
-  &.ubereats { background: #059652; color: white; }
+  &.ubereats { background: #059652; color: rgb(8, 8, 8); }
 }
 .snack-skip {
   background: none; border: none; color: $text3;
