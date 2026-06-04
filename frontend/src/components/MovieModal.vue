@@ -267,9 +267,9 @@
           <p class="snack-title">¡Elegí tu snack favorito!</p>
           <p class="snack-sub">Pochoclos, golosinas, algo salado, algo dulce, algo para tomar... ¡que no falte nada!</p>
           <div class="snack-btns">
-            <a class="snack-btn pedidoya" @click.prevent="goToDelivery('https://www.pedidoya.com.ar/ar/search?q=snacks')">🛵 PedidoYa</a>
-            <a class="snack-btn rappi" @click.prevent="goToDelivery('https://www.rappi.com.ar/buscar?query=snacks')">🛵 Rappi</a>
-            <a class="snack-btn ubereats" @click.prevent="goToDelivery('https://www.ubereats.com/ar/search?q=snacks')">🛵 Uber Eats</a>
+            <a class="snack-btn pedidoya" @click.prevent="goToDelivery('https://www.pedidoya.com.ar/')">🏍️ PedidoYa</a>
+            <a class="snack-btn rappi" @click.prevent="goToDelivery('https://www.rappi.com.ar/buscar?query=snacks')"> 🏍️ Rappi</a>
+            <a class="snack-btn ubereats" @click.prevent="goToDelivery('https://www.ubereats.com/ar/search?q=snacks')"> 🏍️ Uber Eats</a>
           </div>
           <button class="snack-skip" @click="skipSnacks">No gracias, ir a la plataforma</button>
         </div>
@@ -400,10 +400,13 @@ function handleProviderClick(event, id) {
 }
 
 function goToDelivery(deliveryUrl) {
-  window.open(deliveryUrl, '_blank')
-  window.open(pendingProviderUrl.value, '_blank')
+  const platform = pendingProviderUrl.value
   showSnackPopup.value = false
   pendingProviderUrl.value = ''
+  window.open(platform, '_blank')
+  setTimeout(() => {
+    window.open(deliveryUrl, '_blank')
+  }, 300)
 }
 
 function skipSnacks() {
