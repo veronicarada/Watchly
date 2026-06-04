@@ -187,15 +187,15 @@
        <p class="snack-title">¡Elegí tu snack favorito!</p>
        <p class="snack-sub">Pochoclos, golosinas, algo salado, algo dulce, algo para tomar... ¡que no falte nada!</p>
        <div class="snack-btns">
-         <a class="snack-btn pedidoya" @click.prevent="goToDelivery('https://www.pedidoya.com.ar/')">
-           <span class="snack-btn-icon">P</span> PedidosYa
-         </a>
-         <a class="snack-btn rappi" @click.prevent="goToDelivery('https://www.rappi.com.ar/buscar?query=snacks')">
-           <span class="snack-btn-icon">R</span> Rappi
-         </a>
-         <a class="snack-btn ubereats" @click.prevent="goToDelivery('https://www.ubereats.com/ar/search?q=snacks')">
-           <span class="snack-btn-icon">🍴</span> Uber Eats
-         </a>
+            <a class="snack-btn pedidoya" @click.prevent="goToDelivery('https://www.pedidosya.com.ar/?utm_source=google&utm_medium=cpc&utm_campaign=740125327&sem_tracker=740125327&gad_source=1&gad_campaignid=740125327&gbraid=0AAAAAD2Hl2jYyug4oOp0pZ_d-oBU4mgns&gclid=CjwKCAjwxITRBhBYEiwA6mZm7d41vecmt82aP7ocI9bDJaZzms9K2ip0xmJetZIfrN3by69tv0dDgxoC4Z0QAvD_BwE')">
+              <span class="snack-btn-icon"></span> PedidosYa
+           </a>
+           <a class="snack-btn rappi" @click.prevent="goToDelivery('https://www.rappi.com.ar/tiendas/tipo/express-group')">
+             <span class="snack-btn-icon"></span> Rappi
+           </a>
+           <a class="snack-btn ubereats" @click.prevent="goToDelivery('https://www.ubereats.com/ar/search?q=snacks')">
+             <span class="snack-btn-icon">🍴</span> Uber Eats
+           </a>
        </div>
        <button class="snack-skip" @click="skipSnacks">No gracias, ir a la plataforma</button>
      </div>
@@ -671,8 +671,8 @@ function copyInviteLink() {
   transition: opacity 0.2s; display: block;
   &:hover { opacity: 0.85; }
   &.pedidoya { background: #E52243; color: #FFFFFF; }
-  &.rappi { background: #FF6B00; color: #000000; }
-  &.ubereats { background: #06C167; color: white; }
+  &.rappi { background: #FF6B00; color: #ffffff; }
+  &.ubereats { background: #059652; color: white; }
 }
 .snack-skip {
   background: none; border: none; color: $text3;
@@ -690,6 +690,6 @@ function copyInviteLink() {
 }
 .snack-btn.pedidoya { font-family: 'Arial Rounded MT Bold', Arial, sans-serif; }
 .snack-btn.rappi { font-family: 'Georgia', serif; font-style: italic; }
-.snack-btn.ubereats { font-family: 'Arial', sans-serif; font-weight: 800; }
+.snack-btn.ubereats { font-family: 'Arial', sans-serif; font-weight: 400; }
 
 </style>
