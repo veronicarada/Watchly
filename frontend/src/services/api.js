@@ -30,9 +30,9 @@ export const api = {
   searchTV: (q, page = 1) => request(`/movies/search-tv?q=${encodeURIComponent(q)}&page=${page}`),
   popular: (page = 1) => request(`/movies/popular?page=${page}`),
   movieDetail: (id, type = 'movie') => {
-    const cleanId = String(id).replace('_tv', '').replace('_movie', '')
-    const resolvedType = String(id).includes('_tv') ? 'tv' : type
-    return request(`/movies/${cleanId}?type=${resolvedType}`)
+   const cleanId = String(id).replace('_tv', '').replace('_movie', '')
+   const resolvedType = String(id).includes('_tv') ? 'tv' : type
+   return request(`/movies/${cleanId}?type=${resolvedType}`)
   },
   discover: (params = {}) => request(`/movies/discover?${new URLSearchParams(params)}`),
   random: (genre, rating = 6) => request(`/movies/random?rating=${rating}${genre ? '&genre=' + genre : ''}`),
@@ -57,7 +57,7 @@ export const api = {
   getGroup: (code) => request(`/groups/${code}`, 'GET', null, true),
   voteMovie: (code, movie_id, vote) => request(`/groups/${code}/vote`, 'POST', { movie_id, vote }, true),
 
-  // Noche de cine
+  //Noche de cine
   proposeMovie: (code, movie_id, title, poster_path) => request(`/groups/${code}/propose`, 'POST', { movie_id, title, poster_path }, true),
   updateStatus: (code, status) => request(`/groups/${code}/status`, 'POST', { status }, true),
   resolveTieBreaker: (code) => request(`/groups/${code}/tiebreaker`, 'POST', {}, true),
@@ -68,7 +68,4 @@ export const api = {
   updateReview: (reviewId, reviewData) => request(`/reviews/${reviewId}`, 'PUT', reviewData, true),
   deleteReview: (reviewId) => request(`/reviews/${reviewId}`, 'DELETE', null, true),
   reactToReview: (reviewId, type) => request(`/reviews/${reviewId}/react`, 'POST', { type }, true),
-
-  // Kiosquito (Añadido de forma nativa usando fetch)
-  getKiosquitoPromos: () => request('/kiosquito/promos')
 }

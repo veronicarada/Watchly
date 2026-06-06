@@ -6,7 +6,7 @@ const { Server } = require('socket.io');
 const rateLimit = require('express-rate-limit');
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
-const kiosquitoRoutes = require('./src/routes/kiosquito'); // Importación de la ruta del kiosquito
+
 const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 3001;
@@ -105,13 +105,12 @@ app.use(cors({
 
 app.use(express.json());
 
-// Ajuste del limitador para evitar bloqueos estrictos en subrutas de la API
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 500,
   message: { error: 'Demasiadas solicitudes, intentá en 15 minutos' }
 });
-app.use('/api', limiter); // <-- Cambiado de '/api/' a '/api' para mayor flexibilidad de rutas
+app.use('/api/', limiter);
 
 // ─── Routes ──────────────────────────────────────────────────────────────────
 app.use('/api/auth',      require('./src/routes/auth'));
@@ -121,7 +120,6 @@ app.use('/api/groups',    require('./src/routes/groups'));
 app.use('/api/chatbot',   require('./src/routes/chatbot'));
 app.use('/api/reviews',   require('./src/routes/reviews'));
 app.use('/api/watched',   require('./src/routes/watched'));
-app.use('/api/kiosquito', kiosquitoRoutes); // Declaración correcta de la ruta del kiosquito
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: '🎬 Watchly API is running', timestamp: new Date().toISOString() });
