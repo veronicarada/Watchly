@@ -95,6 +95,7 @@
                 <button class="btn-watched" :class="{ active: isWatched }" @click="toggleWatched">
                   {{ isWatched ? '✅ Vista' : '👁 Marcar como vista' }}
                 </button>
+             <button class="btn-secondary" @click="showSnackPopup = true">🍿 Kiosquito</button>
                 <button v-if="isInCines" class="btn-secondary" @click="showCinesPopup = true">📍 Ver en cines</button>
                 <div v-if="showCinesPopup" class="cines-popup">
                   <p>¿En qué ciudad querés ver la película?</p>
@@ -102,6 +103,38 @@
                   <div class="cines-actions">
                     <button class="btn-primary" @click="buscarCines">Buscar</button>
                     <button class="btn-secondary" @click="showCinesPopup = false">Cancelar</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 🍿 NUEVA SECCIÓN: EL KIOSQUITO FIJO EN PANTALLA -->
+              <div class="modal-section kiosquito-container" v-if="promos.length > 0">
+                <h4 class="kiosquito-title">🍿 ¡ARMÁ EL PLAN PERFECTO! PROMOS EN TU KIOSQUITO</h4>
+                <p class="kiosquito-subtitle">Pedí ahora con descuento y que te llegue justo para el inicio de la función.</p>
+                
+                <div class="promos-grid">
+                  <div 
+                    v-for="promo in promos" 
+                    :key="promo.id" 
+                    class="promo-card"
+                    @click="irAAfiliado(promo.affiliate_url)"
+                  >
+                    <div class="promo-badge">{{ calcularDescuento(promo.original_price, promo.discount_price) }}% OFF</div>
+                    <img :src="promo.image_url" :alt="promo.name" class="promo-img" />
+                    
+                    <div class="promo-info">
+                      <h4>{{ promo.name }}</h4>
+                      <p>{{ promo.description }}</p>
+                      
+                      <div class="price-container">
+                        <span class="old-price">${{ promo.original_price }}</span>
+                        <span class="current-price">${{ promo.discount_price }}</span>
+                      </div>
+
+                      <button :class="['btn-buy', promo.delivery_app.toLowerCase()]">
+                        Pedir en {{ promo.delivery_app }} 🚀
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -259,32 +292,54 @@
     </Transition>
 
     <!-- POPUP SNACKS -->
+    <!-- POPUP SNACKS ACTUALIZADO CON PRODUCTOS REALES -->
     <Transition name="snack-fade">
-      <div v-if="showSnackPopup" class="snack-overlay">
-        <div class="snack-popup">
-        
+      <div v-if="showSnackPopup" class="snack-overlay" @click.self="showSnackPopup = false">
+        <div class="snack-popup custom-kiosquito-popup">
+          <button class="modal-close-snack" @click="showSnackPopup = false">✕</button>
+          
           <p class="snack-emoji">🍿</p>
-          <p class="snack-title">¡Elegí tu snack favorito!</p>
-          <p class="snack-sub">Pochoclos, golosinas, algo salado, algo dulce, algo para tomar... ¡que no falte nada!</p>
-          <div class="snack-btns">
-            <a class="snack-btn pedidoya" @click.prevent="goToDelivery('https://www.pedidosya.com.ar/?utm_source=google&utm_medium=cpc&utm_campaign=740125327&sem_tracker=740125327&gad_source=1&gad_campaignid=740125327&gbraid=0AAAAAD2Hl2jYyug4oOp0pZ_d-oBU4mgns&gclid=CjwKCAjwxITRBhBYEiwA6mZm7d41vecmt82aP7ocI9bDJaZzms9K2ip0xmJetZIfrN3by69tv0dDgxoC4Z0QAvD_BwE')">
-              <span class="snack-btn-icon"></span> PedidosYa
-           </a>
-           <a class="snack-btn rappi" @click.prevent="goToDelivery('https://www.rappi.com.ar/tiendas/tipo/express-group')">
-             <span class="snack-btn-icon"></span> Rappi
-           </a>
-           <a class="snack-btn ubereats" @click.prevent="goToDelivery('https://www.ubereats.com/ar/search?q=snacks')">
-             <span class="snack-btn-icon"></span> Uber Eats
-           </a>
+          <p class="snack-title">¡El Kiosquito de Watchly!</p>
+          <p class="snack-sub">Elegí tu snack favorito y compralo directo con descuento en la plataforma de delivery.</p>
+          
+          <!-- Si las promos de la base de datos ya cargaron, las mostramos acá adentro -->
+          <div v-if="promos.length > 0" class="promos-popup-grid">
+            <div 
+              v-for="promo in promos" 
+              :key="promo.id" 
+              class="popup-promo-card"
+              @click="irAAfiliado(promo.affiliate_url)"
+            >
+              <div class="popup-promo-badge">{{ calcularDescuento(promo.original_price, promo.discount_price) }}% OFF</div>
+              <img :src="promo.image_url" :alt="promo.name" class="popup-promo-img" />
+              
+              <div class="popup-promo-info">
+                <h4>{{ promo.name }}</h4>
+                <p>{{ promo.description }}</p>
+                
+                <div class="popup-price-row">
+                  <span class="popup-old-price">${{ promo.original_price }}</span>
+                  <span class="popup-current-price">${{ promo.discount_price }}</span>
+                </div>
+
+                <button :class="['btn-popup-buy', promo.delivery_app.toLowerCase()]">
+                  Comprar ya en {{ promo.delivery_app }} 🚀
+                </button>
+              </div>
+            </div>
           </div>
-          <button class="snack-skip" @click="skipSnacks">→ Ir a la plataforma</button>
+
+          <!-- Si por alguna razón la API tarda en cargar, mostramos un estado de carga -->
+          <div v-else class="loading-dots" style="padding:20px">
+            <span></span><span></span><span></span>
+          </div>
+
+          <button class="snack-skip" @click="showSnackPopup = false">Volver a la película</button>
         </div>
       </div>
     </Transition>
-
   </Teleport>
 </template>
-
 <script setup>
 import { ref, watch, computed } from 'vue'
 import { useModalStore } from '@/stores/modal'
@@ -317,6 +372,7 @@ const pendingProviderUrl = ref('')
 const selectedActor  = ref(null)
 const actorLoading   = ref(false)
 const showBio        = ref(false)
+const promos = ref([])
 // Promedio de estrellas de todas las reseñas visibles
 const averageRating = computed(() => {
   if (!reviews.value.length) return null
@@ -510,6 +566,12 @@ async function handleDeleteReview(reviewId) {
 watch(() => modal.movieId, async (idWithType) => {
   if (!idWithType) { movie.value = null; reviews.value = []; return }
 
+  if (!idWithType) { 
+    movie.value = null; 
+    reviews.value = []; 
+    promos.value = []; // <-- Agregá esto acá
+    return 
+  }
   // Soporta formato "123" o "123_tv"
   const parts    = String(idWithType).split('_')
   const id       = parts[0]
@@ -518,10 +580,12 @@ watch(() => modal.movieId, async (idWithType) => {
   loading.value = true
   isFav.value   = false
   reviews.value = []
+  promos.value  = []
 
   try {
     movie.value = await api.movieDetail(id, type)
     await fetchReviews(id)
+    promos.value = await api.getKiosquitoPromos()
   } catch (err) {
     toast.show('Error al cargar el detalle', 'error')
     loading.value = false
@@ -645,7 +709,14 @@ function buscarCines() {
   showCinesPopup.value = false
   ciudadCines.value = ''
 }
+function calcularDescuento(original, discount) {
+  if (!original || !discount) return 0
+  return Math.round(((original - discount) / original) * 100)
+}
 
+function irAAfiliado(url) {
+  window.open(url, '_blank')
+}
 </script>
 
 <style lang="scss" scoped>
@@ -1138,4 +1209,255 @@ function buscarCines() {
 .snack-btn.pedidoya { font-family: 'Arial Rounded MT Bold', Arial, sans-serif; }
 .snack-btn.rappi { font-family: 'Georgia', serif; font-style: italic; }
 .snack-btn.ubereats { font-family: 'Arial', sans-serif; font-weight: 600; }
+
+.divider {
+  border: 0;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.2), transparent);
+  margin: 30px 0;
+}
+
+.kiosquito-section {
+  margin-top: 20px;
+  text-align: left;
+
+  .kiosquito-title {
+    color: #ffcc00; /* El amarillo corporativo de Watchly */
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+  }
+
+  .kiosquito-subtitle {
+    color: #888;
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+  }
+}
+
+.promos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.promo-card {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    transform: translateY(-5px);
+    border-color: #ffcc00;
+    box-shadow: 0 8px 20px rgba(255, 204, 0, 0.15);
+  }
+
+  .promo-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: #e50914; /* Rojo llamativo para el porcentaje de descuento */
+    color: white;
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    border-radius: 6px;
+    z-index: 1;
+  }
+
+  .promo-img {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    border-bottom: 1px solid #222;
+  }
+
+  .promo-info {
+    padding: 15px;
+
+    h4 {
+      margin: 0 0 5px 0;
+      color: #fff;
+      font-size: 1rem;
+    }
+
+    p {
+      margin: 0 0 15px 0;
+      color: #aaa;
+      font-size: 0.8rem;
+      line-height: 1.3;
+      height: 32px; 
+      overflow: hidden;
+    }
+  }
+}
+
+.price-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+
+  .old-price {
+    color: #666;
+    text-decoration: line-through;
+    font-size: 0.85rem;
+  }
+
+  .current-price {
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: bold;
+  }
+}
+
+.btn-buy {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &.pedidosya {
+    background: #e50043;
+    color: white;
+    &:hover { background: #c20038; }
+  }
+
+  &.rappi {
+    background: #ff5e00;
+    color: white;
+    &:hover { background: #d44e00; }
+  }
+}
+.custom-kiosquito-popup {
+  max-width: 650px !important; /* Ampliamos un poco el ancho para que entren las tarjetas */
+  position: relative;
+  
+  .modal-close-snack {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    background: transparent;
+    border: none;
+    color: #aaa;
+    font-size: 1.2rem;
+    cursor: pointer;
+    &:hover { color: #fff; }
+  }
+}
+
+.promos-popup-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 15px;
+  margin: 20px 0;
+  max-height: 400px;
+  overflow-y: auto; /* Por si en el futuro agregás muchos snacks */
+  padding: 5px;
+}
+
+.popup-promo-card {
+  background: #181818;
+  border: 1px solid #282828;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+
+  &:hover {
+    transform: scale(1.02);
+    border-color: #ffcc00;
+  }
+
+  .popup-promo-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: #e50914;
+    color: white;
+    padding: 2px 6px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    border-radius: 4px;
+    z-index: 1;
+  }
+
+  .popup-promo-img {
+    width: 100%;
+    height: 110px;
+    object-fit: cover;
+  }
+
+  .popup-promo-info {
+    padding: 10px;
+    text-align: left;
+
+    h4 {
+      margin: 0 0 4px 0;
+      color: #fff;
+      font-size: 0.9rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    p {
+      margin: 0 0 10px 0;
+      color: #888;
+      font-size: 0.75rem;
+      height: 30px;
+      overflow: hidden;
+      line-height: 1.2;
+    }
+  }
+}
+
+.popup-price-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+
+  .popup-old-price {
+    color: #555;
+    text-decoration: line-through;
+    font-size: 0.75rem;
+  }
+
+  .popup-current-price {
+    color: #ffcc00;
+    font-size: 0.95rem;
+    font-weight: bold;
+  }
+}
+
+.btn-popup-buy {
+  width: 100%;
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 0.75rem;
+  cursor: pointer;
+  color: white;
+
+  &.pedidosya {
+    background: #e50043;
+    &:hover { background: #c20038; }
+  }
+
+  &.rappi {
+    background: #ff5e00;
+    &:hover { background: #d44e00; }
+  }
+}
 </style>
