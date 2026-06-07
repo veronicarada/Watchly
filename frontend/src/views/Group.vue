@@ -181,26 +181,18 @@
   </div>
   <Transition name="snack-fade">
    <div v-if="showSnackPopup" class="snack-overlay">
-    <div class="snack-popup">
-      <button class="snack-close" @click="showSnackPopup = false; pendingProviderUrl = ''">✕</button>
-      
-       <p class="snack-emoji">🍿</p>
-       <p class="snack-title">¡Elegí tu snack favorito!</p>
-       <p class="snack-sub">Pochoclos, golosinas, algo salado, algo dulce, algo para tomar... ¡que no falte nada!</p>
+     <div class="snack-popup">
+     <button class="snack-close" @click="closeSnackPopup">✕</button>
+      <p class="snack-emoji">🍿</p>
+      <p class="snack-title">¿Querés algo para acompañar?</p>
+      <p class="snack-sub">Antes de ir a ver la peli, ¿no querés pedirte algo rico?</p>
        <div class="snack-btns">
-            <a class="snack-btn pedidoya" @click.prevent="goToDelivery('https://www.pedidosya.com.ar/?utm_source=google&utm_medium=cpc&utm_campaign=740125327&sem_tracker=740125327&gad_source=1&gad_campaignid=740125327&gbraid=0AAAAAD2Hl2jYyug4oOp0pZ_d-oBU4mgns&gclid=CjwKCAjwxITRBhBYEiwA6mZm7d41vecmt82aP7ocI9bDJaZzms9K2ip0xmJetZIfrN3by69tv0dDgxoC4Z0QAvD_BwE')">
-              <span class="snack-btn-icon"></span> PedidosYa
-           </a>
-           <a class="snack-btn rappi" @click.prevent="goToDelivery('https://www.rappi.com.ar/tiendas/tipo/express-group')">
-             <span class="snack-btn-icon"></span> Rappi
-           </a>
-           <a class="snack-btn ubereats" @click.prevent="goToDelivery('https://www.ubereats.com/ar/search?q=snacks')">
-             <span class="snack-btn-icon"></span> Uber Eats
-           </a>
-       </div>
-       <button class="snack-skip" @click="skipSnacks">→ Ir a la plataforma</button>
-     </div>
-   </div>
+        <button class="snack-btn kiosco-trigger" @click="goToKiosco">🏪 Ir al Kiosquito</button>
+        <button class="snack-btn ir-peli" @click="skipSnacks">🎬 Ir a la plataforma</button>
+      </div>
+    </div>
+    </div>
+
  </Transition>
 </template>
 
@@ -316,7 +308,8 @@ function disconnectSocket(code) {
 onMounted(async () => {
   const codeFromUrl = route.params.code
   const pendingCode = localStorage.getItem('watchly_pending_join')
-  const code = codeFromUrl || pendingCode
+  const activeCode = localStorage.getItem('watchly_active_group')
+  const code = codeFromUrl || pendingCode || activeCode
   if (code && auth.isLoggedIn) {
     localStorage.removeItem('watchly_pending_join')
     joinCode.value = code
@@ -335,6 +328,7 @@ const isSearching = ref(false)
 const currentVoteIndex = ref(0)
 const showSnackPopup = ref(false)
 const pendingProviderUrl = ref('')
+const snackAlreadyShown = ref(false)
 
 
 const colors = ['#FFD700', '#FF6B6B', '#4ECDC4', '#A29BFE', '#FD79A8']
@@ -391,7 +385,10 @@ function startPolling() {
 
 onUnmounted(() => {
   if (polling.value) clearInterval(polling.value)
-  if (currentGroup.value) disconnectSocket(currentGroup.value.code)
+  if (currentGroup.value) {
+    localStorage.setItem('watchly_active_group', currentGroup.value.code)
+    disconnectSocket(currentGroup.value.code)
+  }
 })
 
 async function handleSearch() {
@@ -476,26 +473,39 @@ async function triggerTieBreaker() {
   } catch (err) { toast.show(err.message, 'error') }
 }
 function handleGroupProviderClick(url) {
+  if (snackAlreadyShown.value) {
+    window.open(url, '_blank')
+    return
+  }
   pendingProviderUrl.value = url
   showSnackPopup.value = true
-}
-
-function goToDelivery(deliveryUrl) {
-  showSnackPopup.value = false
-  pendingProviderUrl.value = ''
-  window.open(deliveryUrl, '_blank')
 }
 
 function skipSnacks() {
   window.open(pendingProviderUrl.value, '_blank')
   showSnackPopup.value = false
   pendingProviderUrl.value = ''
+  snackAlreadyShown.value = true
+}
+
+function closeSnackPopup() {
+  showSnackPopup.value = false
+  pendingProviderUrl.value = ''
+  snackAlreadyShown.value = true
+}
+
+function goToKiosco() {
+  showSnackPopup.value = false
+  snackAlreadyShown.value = true
+  pendingProviderUrl.value = ''
+  document.querySelector('.kiosco-bubble')?.click()
 }
 
 function leaveGroup() {
   if (polling.value) clearInterval(polling.value)
   if (currentGroup.value) disconnectSocket(currentGroup.value.code)
   if (popoutWindow && !popoutWindow.closed) popoutWindow.close()
+  localStorage.removeItem('watchly_active_group')
   currentGroup.value = null
   voteMovie.value = null
   currentVoteIndex.value = 0
@@ -693,4 +703,16 @@ function copyInviteLink() {
 .snack-btn.rappi { font-family: 'Georgia', serif; font-style: italic; }
 .snack-btn.ubereats { font-family: 'Arial', sans-serif; font-weight: 600; }
 
+.snack-btn.kiosco-trigger {
+  background: $gold; color: #000; font-weight: 700;
+  border: none; padding: 12px 20px; border-radius: 12px;
+  font-size: 14px; cursor: pointer; width: 100%;
+  transition: opacity 0.2s; &:hover { opacity: 0.85; }
+}
+.snack-btn.ir-peli {
+  background: $bg3; color: $text; font-weight: 700;
+  border: 1px solid $border; padding: 12px 20px; border-radius: 12px;
+  font-size: 14px; cursor: pointer; width: 100%;
+  transition: opacity 0.2s; &:hover { border-color: $gold; color: $gold; }
+}
 </style>
