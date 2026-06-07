@@ -68,13 +68,12 @@
                   <span v-if="!allProviders.length" class="no-providers">
                     No disponible en streaming actualmente
                   </span>
-                  <a v-for="prov in allProviders"
+                  <a  v-for="prov in allProviders"
                     :key="prov.provider_id + prov.type"
                     class="provider-item"
                     :href="providerUrl(prov.provider_id)"
                     target="_blank"
                     :title="prov.provider_name"
-                    @click="handleProviderClick($event, prov.provider_id)"
                   >
                     <img
                       :src="'https://image.tmdb.org/t/p/original' + prov.logo_path"
@@ -258,30 +257,6 @@
       </div>
     </Transition>
 
-    <!-- POPUP SNACKS -->
-    <Transition name="snack-fade">
-      <div v-if="showSnackPopup" class="snack-overlay">
-        <div class="snack-popup">
-        
-          <p class="snack-emoji">🍿</p>
-          <p class="snack-title">¡Elegí tu snack favorito!</p>
-          <p class="snack-sub">Pochoclos, golosinas, algo salado, algo dulce, algo para tomar... ¡que no falte nada!</p>
-          <div class="snack-btns">
-            <a class="snack-btn pedidoya" @click.prevent="goToDelivery('https://www.pedidosya.com.ar/?utm_source=google&utm_medium=cpc&utm_campaign=740125327&sem_tracker=740125327&gad_source=1&gad_campaignid=740125327&gbraid=0AAAAAD2Hl2jYyug4oOp0pZ_d-oBU4mgns&gclid=CjwKCAjwxITRBhBYEiwA6mZm7d41vecmt82aP7ocI9bDJaZzms9K2ip0xmJetZIfrN3by69tv0dDgxoC4Z0QAvD_BwE')">
-              <span class="snack-btn-icon"></span> PedidosYa
-           </a>
-           <a class="snack-btn rappi" @click.prevent="goToDelivery('https://www.rappi.com.ar/tiendas/tipo/express-group')">
-             <span class="snack-btn-icon"></span> Rappi
-           </a>
-           <a class="snack-btn ubereats" @click.prevent="goToDelivery('https://www.ubereats.com/ar/search?q=snacks')">
-             <span class="snack-btn-icon"></span> Uber Eats
-           </a>
-          </div>
-          <button class="snack-skip" @click="skipSnacks">→ Ir a la plataforma</button>
-        </div>
-      </div>
-    </Transition>
-
   </Teleport>
 </template>
 
@@ -312,8 +287,6 @@ const editComment      = ref('')
 const editRating       = ref(5)
 const showCinesPopup = ref(false)
 const ciudadCines = ref('')
-const showSnackPopup = ref(false)
-const pendingProviderUrl = ref('')
 const selectedActor  = ref(null)
 const actorLoading   = ref(false)
 const showBio        = ref(false)
@@ -397,24 +370,6 @@ const isInCines = computed(() => {
 function providerUrl(id) {
   return PROVIDERS[id]?.url ||
     'https://www.google.com/search?q=' + encodeURIComponent(movie.value?.title || '') + '+streaming+argentina'
-}
-
-function handleProviderClick(event, id) {
-  event.preventDefault()
-  pendingProviderUrl.value = providerUrl(id)
-  showSnackPopup.value = true
-}
-
-function goToDelivery(deliveryUrl) {
-  showSnackPopup.value = false
-  pendingProviderUrl.value = ''
-  window.open(deliveryUrl, '_blank')
-}
-
-function skipSnacks() {
-  window.open(pendingProviderUrl.value, '_blank')
-  showSnackPopup.value = false
-  pendingProviderUrl.value = ''
 }
 
 function shortName(id, fallback) {
@@ -1085,57 +1040,4 @@ function buscarCines() {
   color: $text3;
 }
 
-.snack-overlay {
-  position: fixed; inset: 0; z-index: 999;
-  background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);
-  display: flex; align-items: center; justify-content: center; padding: 20px;
-}
-.snack-popup {
-  background: $bg2; border: 1px solid rgba(255,215,0,0.3);
-  border-radius: 20px; padding: 32px 28px; max-width: 380px; width: 100%;
-  text-align: center; position: relative;
-}
-.snack-close {
-  position: absolute; top: 14px; right: 14px;
-  background: none; border: none; color: $text3;
-  cursor: pointer; font-size: 16px;
-  &:hover { color: $text; }
-}
-.snack-emoji { font-size: 48px; margin-bottom: 8px; }
-.snack-title {
-  font-family: $font-display; font-size: 22px; color: $gold;
-  letter-spacing: 1px; margin-bottom: 8px;
-}
-.snack-sub {
-  font-size: 13px; color: $text2; line-height: 1.6; margin-bottom: 20px;
-}
-.snack-btns {
-  display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;
-}
-.snack-btn {
-  padding: 12px 20px; border-radius: 12px;
-  font-size: 14px; font-weight: 700;
-  text-decoration: none; cursor: pointer;
-  transition: opacity 0.2s; display: block;
-  &:hover { opacity: 0.85; }
-  &.pedidoya { background: #FA0050; color: white; }
-  &.rappi { background: #FF441F; color: white; }
-  &.ubereats { background: #1a7a45; color: white; }
-}
-.snack-skip {
-  background: none; border: none; color: white;
-  font-size: 14px; cursor: pointer; font-family: $font-body;
-  text-decoration: underline;
-  &:hover { color: $gold; }
-}
-.snack-fade-enter-active, .snack-fade-leave-active { transition: opacity 0.25s ease; }
-.snack-fade-enter-from, .snack-fade-leave-to { opacity: 0; }
-.snack-btn-icon {
-  font-size: 18px;
-  font-weight: 900;
-  margin-right: 6px;
-}
-.snack-btn.pedidoya { font-family: 'Arial Rounded MT Bold', Arial, sans-serif; }
-.snack-btn.rappi { font-family: 'Georgia', serif; font-style: italic; }
-.snack-btn.ubereats { font-family: 'Arial', sans-serif; font-weight: 600; }
 </style>

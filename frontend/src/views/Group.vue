@@ -181,7 +181,8 @@
   </div>
   <Transition name="snack-fade">
    <div v-if="showSnackPopup" class="snack-overlay">
-     <div class="snack-popup">
+    <div class="snack-popup">
+      <button class="snack-close" @click="showSnackPopup = false; pendingProviderUrl = ''">✕</button>
       
        <p class="snack-emoji">🍿</p>
        <p class="snack-title">¡Elegí tu snack favorito!</p>

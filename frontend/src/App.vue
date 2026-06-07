@@ -10,6 +10,7 @@
       <AuthModal />
       <ToastContainer />
       <ChatBot />
+      <Kiosco />
     </template>
     <template v-else>
       <RouterView />
@@ -25,6 +26,7 @@ import MovieModal     from '@/components/MovieModal.vue'
 import AuthModal      from '@/components/AuthModal.vue'
 import ToastContainer from '@/components/ToastContainer.vue'
 import ChatBot        from '@/views/Chatbot.vue'
+import Kiosco from '@/components/Kiosco.vue'
 
 const route = useRoute()
 </script>
