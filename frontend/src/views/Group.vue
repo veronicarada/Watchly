@@ -113,12 +113,12 @@
               <p v-if="voteMovie.overview">{{ voteMovie.overview.substring(0, 140) }}...</p>
               <p v-else>Esta es la elegida para hoy.</p>
               
-              <a class="btn-primary"
-               style="display: block; text-align: center; text-decoration: none; margin-top: 15px; cursor: pointer;"
-               @click.prevent="handleGroupProviderClick('https://www.justwatch.com/ar/buscar?q=' + encodeURIComponent(voteMovie.title))"
-                >
-                  VER EN PLATAFORMA
-              </a>
+               <a :href="'https://www.justwatch.com/ar/buscar?q=' + encodeURIComponent(voteMovie.title)"
+                  target="_blank"
+                  class="btn-primary"
+                  style="display: block; text-align: center; text-decoration: none; margin-top: 15px;">
+                   VER EN PLATAFORMA
+               </a>
             
             </div>
           </div>
@@ -179,21 +179,7 @@
       </div>
     </template>
   </div>
-  <Transition name="snack-fade">
-   <div v-if="showSnackPopup" class="snack-overlay">
-     <div class="snack-popup">
-     <button class="snack-close" @click="closeSnackPopup">✕</button>
-      <p class="snack-emoji">🍿</p>
-      <p class="snack-title">¿Querés algo para acompañar?</p>
-      <p class="snack-sub">Antes de ir a ver la peli, ¿no querés pedirte algo rico?</p>
-       <div class="snack-btns">
-        <button class="snack-btn kiosco-trigger" @click="goToKiosco">🏪 Ir al Kiosquito</button>
-        <button class="snack-btn ir-peli" @click="skipSnacks">🎬 Ir a la plataforma</button>
-      </div>
-    </div>
-    </div>
-
- </Transition>
+  
 </template>
 
 <script setup>
@@ -326,9 +312,7 @@ const searchQuery = ref('')
 const searchResults = ref([])
 const isSearching = ref(false)
 const currentVoteIndex = ref(0)
-const showSnackPopup = ref(false)
-const pendingProviderUrl = ref('')
-const snackAlreadyShown = ref(false)
+
 
 
 const colors = ['#FFD700', '#FF6B6B', '#4ECDC4', '#A29BFE', '#FD79A8']
@@ -472,34 +456,7 @@ async function triggerTieBreaker() {
     toast.show('🎲 El azar decidió.', 'success')
   } catch (err) { toast.show(err.message, 'error') }
 }
-function handleGroupProviderClick(url) {
-  if (snackAlreadyShown.value) {
-    window.open(url, '_blank')
-    return
-  }
-  pendingProviderUrl.value = url
-  showSnackPopup.value = true
-}
 
-function skipSnacks() {
-  window.open(pendingProviderUrl.value, '_blank')
-  showSnackPopup.value = false
-  pendingProviderUrl.value = ''
-  snackAlreadyShown.value = true
-}
-
-function closeSnackPopup() {
-  showSnackPopup.value = false
-  pendingProviderUrl.value = ''
-  snackAlreadyShown.value = true
-}
-
-function goToKiosco() {
-  showSnackPopup.value = false
-  snackAlreadyShown.value = true
-  pendingProviderUrl.value = ''
-  document.querySelector('.kiosco-bubble')?.click()
-}
 
 function leaveGroup() {
   if (polling.value) clearInterval(polling.value)
@@ -648,71 +605,5 @@ function copyInviteLink() {
 }
 .chat-send { background: $gold; color: #000; border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; &:hover { opacity: 0.85; } }
 
-.snack-overlay {
-  position: fixed; inset: 0; z-index: 999;
-  background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);
-  display: flex; align-items: center; justify-content: center; padding: 20px;
-}
-.snack-popup {
-  background: $bg2; border: 1px solid rgba(255,215,0,0.3);
-  border-radius: 20px; padding: 32px 28px; max-width: 380px; width: 100%;
-  text-align: center; position: relative;
-}
-.snack-close {
-  position: absolute; top: 14px; right: 14px;
-  background: none; border: none; color: $text3;
-  cursor: pointer; font-size: 16px;
-  &:hover { color: $text; }
-}
-.snack-emoji { font-size: 48px; margin-bottom: 8px; }
-.snack-title {
-  font-family: $font-display; font-size: 22px; color: $gold;
-  letter-spacing: 1px; margin-bottom: 8px;
-}
-.snack-sub {
-  font-size: 13px; color: $text2; line-height: 1.6; margin-bottom: 20px;
-}
-.snack-btns {
-  display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;
-}
-.snack-btn {
-  padding: 12px 20px; border-radius: 12px;
-  font-size: 14px; font-weight: 700;
-  text-decoration: none; cursor: pointer;
-  transition: opacity 0.2s; display: block;
-  &:hover { opacity: 0.85; }
-  &.pedidoya { background: #E52243; color: #FFFFFF; }
-  &.rappi { background: #FF6B00; color: #ffffff; }
-  &.ubereats { background: #1a7a45; color: white; }
-}
-.snack-skip {
-  background: none; border: none; color: white;
-  font-size: 14px; cursor: pointer; font-family: $font-body;
-  text-decoration: underline;
-  &:hover { color: $gold; }
-}
-.snack-fade-enter-active, .snack-fade-leave-active { transition: opacity 0.25s ease; }
-.snack-fade-enter-from, .snack-fade-leave-to { opacity: 0; }
 
-.snack-btn-icon {
-  font-size: 18px;
-  font-weight: 900;
-  margin-right: 6px;
-}
-.snack-btn.pedidoya { font-family: 'Arial Rounded MT Bold', Arial, sans-serif; }
-.snack-btn.rappi { font-family: 'Georgia', serif; font-style: italic; }
-.snack-btn.ubereats { font-family: 'Arial', sans-serif; font-weight: 600; }
-
-.snack-btn.kiosco-trigger {
-  background: $gold; color: #000; font-weight: 700;
-  border: none; padding: 12px 20px; border-radius: 12px;
-  font-size: 14px; cursor: pointer; width: 100%;
-  transition: opacity 0.2s; &:hover { opacity: 0.85; }
-}
-.snack-btn.ir-peli {
-  background: $bg3; color: $text; font-weight: 700;
-  border: 1px solid $border; padding: 12px 20px; border-radius: 12px;
-  font-size: 14px; cursor: pointer; width: 100%;
-  transition: opacity 0.2s; &:hover { border-color: $gold; color: $gold; }
-}
 </style>
